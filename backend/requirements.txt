@@ -1,0 +1,17 @@
+# 3 Pillars backend. Pinned to minor versions: the client's team depends on
+# this CMS, so upgrades are a deliberate act, not a side effect of a rebuild.
+
+Django==5.2.17
+django-unfold==0.104.1          # admin theme adminkit is built on (adminkit/README.md)
+djangorestframework==3.15.2
+django-cors-headers==4.9.0
+django-environ==0.14.0
+django-filter==25.2
+django-otp==1.7.5               # optional TOTP for staff (ADMIN_REQUIRE_2FA)
+Pillow==13.0.0                  # image validation + WebP/AVIF renditions
+nh3==0.3.7                      # sanitises rich text before it is stored
+
+gunicorn==23.0.0                # production WSGI server (deploy/README.md)
+
+# Only when moving off sqlite (DATABASE_URL=postgres://...):
+# psycopg[binary]==3.2.*

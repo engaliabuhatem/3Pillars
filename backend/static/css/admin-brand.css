@@ -1,0 +1,23 @@
+/* 3 Pillars brand for adminkit. Variables only (adminkit/README.md §6). */
+:root {
+  --ak-accent-1: #0B5EAC;  /* blue — also the focus ring */
+  --ak-accent-2: #136131;  /* green */
+  --ak-accent-3: #5C5E60;  /* grey */
+  --ak-hero-from: #191747; /* navy welcome band */
+  --ak-hero-to: #0B5EAC;
+  --ak-hero-glow: #6D9ECD;
+  --ak-ink: #191747;
+  --ak-text: #191747;
+  --ak-text-soft: #5C5E60;
+  --ak-line: rgb(25 23 71 / 0.08);
+  --ak-radius: 14px;
+  --ak-display: "Source Sans 3", "Tajawal", ui-sans-serif, system-ui, sans-serif;
+}
+
+html.dark {
+  --ak-accent-1: #6D9ECD;
+  --ak-accent-2: #71A083;
+  --ak-accent-3: #9D9EA0;
+  --ak-text: #F7F8FA;
+  --ak-text-soft: #C0C1C2;
+}

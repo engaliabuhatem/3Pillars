@@ -1,0 +1,291 @@
+@import 'tailwindcss';
+@import '../styles/palette.css';
+
+@custom-variant rtl (&:where([dir='rtl'], [dir='rtl'] *));
+@custom-variant on-navy (&:where([data-surface='navy'], [data-surface='navy'] *));
+
+/*
+ * Design tokens. Components read only these — no raw hex anywhere else.
+ * Brand scales live in palette.css (generated); this file holds semantic
+ * roles, type, shape, depth and motion.
+ */
+@theme {
+  /* Neutrals — cool canvas, navy-tinted hairlines (never pure grey). */
+  --color-canvas: #F7F8FA;
+  --color-surface: #FFFFFF;
+  --color-hairline: rgb(25 23 71 / 0.08);
+  --color-hairline-strong: rgb(25 23 71 / 0.16);
+  --color-hairline-inverse: rgb(255 255 255 / 0.14);
+  --color-ink: var(--color-navy);
+  --color-ink-muted: var(--color-grey);
+  --color-ink-inverse: #ffffff;
+  --color-ink-inverse-muted: var(--color-grey-200);
+  --color-scrim: rgb(25 23 71 / 0.8);
+  --color-focus: var(--color-blue);
+  --color-danger: #B42318;
+  --color-danger-50: #FEF3F2;
+  --color-warning: #8A5300;
+  --color-warning-50: #FFF8EB;
+
+  /* Type — one token per family so a licensed Myriad Pro / GE SS is a one-line swap. */
+  --font-latin: var(--font-source-sans), 'Myriad Pro', ui-sans-serif, system-ui, sans-serif;
+  --font-arabic: var(--font-tajawal), 'GE SS Two', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-latin), var(--font-arabic);
+
+  --text-display: clamp(3.5rem, 2.2rem + 4.2vw, 6rem);
+  --text-display--line-height: 1.05;
+  --text-display--letter-spacing: -0.02em;
+  --text-h1: clamp(2.5rem, 1.8rem + 2.4vw, 4rem);
+  --text-h1--line-height: 1.08;
+  --text-h1--letter-spacing: -0.02em;
+  --text-h2: clamp(2rem, 1.55rem + 1.6vw, 3rem);
+  --text-h2--line-height: 1.12;
+  --text-h2--letter-spacing: -0.015em;
+  --text-h3: clamp(1.5rem, 1.3rem + 0.8vw, 2rem);
+  --text-h3--line-height: 1.2;
+  --text-h3--letter-spacing: -0.01em;
+  --text-lead: clamp(1.1875rem, 1.1rem + 0.35vw, 1.375rem);
+  --text-lead--line-height: 1.55;
+  --text-body: clamp(1.0625rem, 1.03rem + 0.15vw, 1.1875rem);
+  --text-body--line-height: 1.6;
+  --text-caption: clamp(0.8125rem, 0.8rem + 0.07vw, 0.875rem);
+  --text-caption--line-height: 1.45;
+  --text-eyebrow: 0.8125rem;
+  --text-eyebrow--line-height: 1.3;
+  --text-eyebrow--letter-spacing: 0.35em;
+
+  /* Shape — from the CI sheet: large rounded rectangles, thin strokes. */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --radius-pill: 999px;
+
+  /* Depth — three navy-tinted elevation steps. */
+  --shadow-1: 0 1px 2px rgb(25 23 71 / 0.06), 0 2px 8px rgb(25 23 71 / 0.04);
+  --shadow-2: 0 2px 6px rgb(25 23 71 / 0.06), 0 12px 32px rgb(25 23 71 / 0.08);
+  --shadow-3: 0 8px 20px rgb(25 23 71 / 0.08), 0 32px 72px rgb(25 23 71 / 0.14);
+
+  /* Motion. */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --duration-fast: 150ms;
+  --duration-base: 300ms;
+  --duration-slow: 600ms;
+  --duration-cinematic: 1000ms;
+
+  /* Layout. */
+  --container-content: 76rem;
+  --container-wide: 90rem;
+  --container-prose: 68ch;
+  --spacing-section: clamp(4.5rem, 2.6rem + 6vw, 10rem);
+  --spacing-gutter: clamp(1.25rem, 0.8rem + 2vw, 2.5rem);
+  --spacing-nav: 4rem;
+
+  --animate-ken-burns: ken-burns 24s var(--ease-in-out) infinite alternate;
+  --animate-marquee: marquee 40s linear infinite;
+
+  @keyframes marquee {
+    to { transform: translate3d(-50%, 0, 0); }
+  }
+
+  @keyframes ken-burns {
+    from { transform: scale(1.02) translate3d(0, 0, 0); }
+    to { transform: scale(1.1) translate3d(-1.5%, -1%, 0); }
+  }
+}
+
+@utility duration-fast { transition-duration: var(--duration-fast); }
+@utility duration-base { transition-duration: var(--duration-base); }
+@utility duration-slow { transition-duration: var(--duration-slow); }
+@utility duration-cinematic { transition-duration: var(--duration-cinematic); }
+@utility container-content {
+  margin-inline: auto;
+  width: 100%;
+  max-width: calc(var(--container-content) + 2 * var(--spacing-gutter));
+  padding-inline: var(--spacing-gutter);
+}
+@utility container-wide {
+  margin-inline: auto;
+  width: 100%;
+  max-width: calc(var(--container-wide) + 2 * var(--spacing-gutter));
+  padding-inline: var(--spacing-gutter);
+}
+@utility eyebrow {
+  font-size: var(--text-eyebrow);
+  line-height: var(--text-eyebrow--line-height);
+  letter-spacing: var(--text-eyebrow--letter-spacing);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+/*
+ * Hero readability. White text needs at least 60% navy behind it to hold
+ * 4.5:1 over a pure-white frame (tests/e2e/motion.spec.ts measures this), so
+ * the lower ~three quarters, where the text block sits, never drops below
+ * that. Above it the footage shows through. On wide screens a second layer
+ * deepens the reading side (start edge) for longer headlines.
+ */
+@utility hero-scrim {
+  --scrim-1: color-mix(in srgb, var(--color-navy) 92%, transparent);
+  --scrim-2: color-mix(in srgb, var(--color-navy) 80%, transparent);
+  --scrim-3: color-mix(in srgb, var(--color-navy) 64%, transparent);
+  --scrim-4: color-mix(in srgb, var(--color-navy) 20%, transparent);
+  --scrim-side: color-mix(in srgb, var(--color-navy) 45%, transparent);
+  background: linear-gradient(to top, var(--scrim-1) 0%, var(--scrim-2) 45%, var(--scrim-3) 74%, var(--scrim-4) 100%);
+  @media (width >= 48rem) {
+    background:
+      linear-gradient(to right, var(--scrim-side), transparent 65%),
+      linear-gradient(to top, var(--scrim-1) 0%, var(--scrim-2) 45%, var(--scrim-3) 74%, var(--scrim-4) 100%);
+    [dir='rtl'] & {
+      background:
+        linear-gradient(to left, var(--scrim-side), transparent 65%),
+        linear-gradient(to top, var(--scrim-1) 0%, var(--scrim-2) 45%, var(--scrim-3) 74%, var(--scrim-4) 100%);
+    }
+  }
+}
+
+@utility glass {
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    scroll-padding-top: var(--spacing-nav);
+  }
+
+  body {
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+  }
+
+  /*
+   * Arabic: Tajawal leads, lines open up ~10%, and nothing is tracked tighter
+   * or forced to uppercase — Arabic script has no case and negative tracking
+   * breaks the joins between letters.
+   */
+  [dir='rtl'] {
+    --font-sans: var(--font-arabic), var(--font-latin);
+  }
+  [dir='rtl'] body {
+    line-height: calc(var(--text-body--line-height) * 1.1);
+  }
+  [dir='rtl'] :where(h1, h2, h3, h4, p, li, blockquote, .eyebrow, [class*='text-display'], [class*='text-h']) {
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+  }
+  [dir='rtl'] :where(h1, h2, h3, h4, [class*='text-display'], [class*='text-h']) {
+    line-height: 1.3;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 3px;
+    border-radius: var(--radius-sm);
+  }
+  [data-surface='navy'] :focus-visible {
+    outline-color: var(--color-blue-200);
+  }
+
+  ::selection {
+    background: var(--color-blue-100);
+    color: var(--color-navy);
+  }
+}
+
+/*
+ * Scroll reveals (components/motion). Only `.reveal-pending` hides anything,
+ * and only RevealController adds it, to elements below the fold.
+ */
+@layer components {
+  [data-reveal]:not([data-reveal='words'], [data-reveal='draw']) {
+    transition:
+      opacity var(--duration-slow) var(--ease-out-expo),
+      transform var(--duration-slow) var(--ease-out-expo),
+      filter var(--duration-slow) var(--ease-out-expo);
+    transition-delay: var(--reveal-delay, 0ms);
+  }
+  [data-reveal].reveal-pending:not([data-reveal='words'], [data-reveal='draw']) {
+    opacity: 0;
+    transform: translate3d(0, 20px, 0);
+    filter: blur(6px);
+  }
+
+  .reveal-word {
+    display: inline-block;
+    overflow: hidden;
+    padding-bottom: 0.12em;
+    margin-bottom: -0.12em;
+    vertical-align: bottom;
+  }
+  .reveal-word > span {
+    display: inline-block;
+    transition: transform 900ms var(--ease-out-expo);
+    transition-delay: var(--word-delay, 0ms);
+  }
+  [data-reveal='words'].reveal-pending .reveal-word > span {
+    transform: translate3d(0, 105%, 0);
+  }
+
+  [data-reveal='draw'] path {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset 1600ms var(--ease-out-expo);
+    transition-delay: var(--arc-delay, 0ms);
+  }
+  [data-reveal='draw'].reveal-pending path {
+    stroke-dashoffset: 1;
+  }
+}
+
+/* Pillar scroll progress: each bar fills its third of --progress (components/layout/PillarProgress). */
+@layer components {
+  .pillar-progress [style*='--i'] {
+    transform: scaleY(clamp(0, calc(var(--progress, 0) * 3 - var(--i)), 1));
+    transition: transform var(--duration-fast) linear;
+  }
+}
+
+/* Logo draw-on (components/brand/LogoIntro): first visit only, on the header logo. */
+@layer components {
+  [data-intro] [data-intro-logo] [data-part^='pillar'] {
+    transform-box: fill-box;
+    transform-origin: bottom;
+    animation: pillar-rise 520ms var(--ease-out-expo) both;
+  }
+  [data-intro] [data-intro-logo] [data-part='pillar-blue'] { animation-delay: 80ms; }
+  [data-intro] [data-intro-logo] [data-part='pillar-grey'] { animation-delay: 160ms; }
+  [data-intro] [data-intro-logo] [data-part^='arc'] {
+    stroke-dasharray: 1;
+    animation: arc-draw 700ms var(--ease-out-expo) both;
+    animation-delay: 320ms;
+  }
+  [data-intro] [data-intro-logo] [data-part='arc-blue'] { animation-delay: 380ms; }
+  [data-intro] [data-intro-logo] [data-part='arc-grey'] { animation-delay: 440ms; }
+  [data-intro] [data-intro-logo] [data-part='arc-outer'],
+  [data-intro] [data-intro-logo] [data-part='arc-bowl'] { animation-delay: 500ms; }
+  [data-intro] [data-intro-name] { animation: fade-in 400ms ease-out 900ms both; }
+
+  @keyframes pillar-rise { from { transform: scaleY(0); } }
+  @keyframes arc-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+  @keyframes fade-in { from { opacity: 0; } }
+}
+
+/* Reduced motion: instant opacity changes only (brief §4.2). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,18 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<div style="max-width: 420px; margin: 48px auto;">
+  <h1 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 8px;">Two-step verification</h1>
+  <p style="margin-bottom: 24px;">Enter the code from the authenticator app registered to your account.
+    If you have not set one up, ask an administrator to add a TOTP device for you under Staff users.</p>
+  <form method="post">
+    {% csrf_token %}
+    {% for field in form %}
+      <label for="{{ field.id_for_label }}" style="display:block; font-weight:600; margin-bottom:6px;">{{ field.label }}</label>
+      {{ field }}
+      {% for error in field.errors %}<p role="alert" style="color:#B42318; margin-top:6px;">{{ error }}</p>{% endfor %}
+    {% endfor %}
+    <button type="submit" class="bg-primary-600 text-white rounded-default px-4 py-2 mt-4 font-semibold">Verify</button>
+  </form>
+</div>
+{% endblock %}

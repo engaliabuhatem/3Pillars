@@ -1,0 +1,32 @@
+# dependencies
+/node_modules
+
+# next.js
+/.next/
+/out/
+next-env.d.ts
+*.tsbuildinfo
+
+# testing
+/coverage
+/test-results/
+/playwright-report/
+/blob-report/
+
+# env
+.env
+.env*.local
+
+# os
+.DS_Store
+Thumbs.db
+
+# python / django backend
+__pycache__/
+*.py[cod]
+.venv/
+db.sqlite3
+db.sqlite3.*
+/backend/staticfiles/
+/backend/assets/
+/backend/private/
