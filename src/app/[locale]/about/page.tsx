@@ -77,7 +77,7 @@ export default async function AboutPage({ params }: PageProps<'/[locale]/about'>
             <SectionHeading title={t.sections.certifications} />
             <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {certifications.map((cert) => (
-                <li key={cert.id} className="rounded-lg bg-surface p-6 ring-1 ring-hairline ring-inset">
+                <li key={cert.id} className="tile p-7 md:p-8">
                   <p className="text-lg font-semibold">{cert.name}</p>
                   <p className="text-ink-muted">
                     {cert.issuer}
@@ -97,7 +97,7 @@ export default async function AboutPage({ params }: PageProps<'/[locale]/about'>
             <SectionHeading title={t.sections.offices} />
             <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {offices.map((office) => (
-                <li key={office.id} className="rounded-lg bg-canvas p-6 ring-1 ring-hairline ring-inset">
+                <li key={office.id} className="tile p-7 md:p-8">
                   <p className="text-xl font-semibold">
                     {office.city}, {office.country}
                   </p>

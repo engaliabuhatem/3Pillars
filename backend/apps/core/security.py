@@ -8,8 +8,14 @@ from django.urls import reverse
 
 
 def client_ip(request) -> str:
-    # nginx sets X-Real-IP from the socket; X-Forwarded-For is client-controlled.
-    return request.META.get("HTTP_X_REAL_IP") or request.META.get("REMOTE_ADDR", "")
+    """
+    The visitor's address. X-Real-IP is only trusted when NUM_PROXIES says a
+    proxy (nginx) sets it; otherwise anyone could send the header themselves
+    and dodge the login lockout.
+    """
+    if settings.REST_FRAMEWORK.get("NUM_PROXIES"):
+        return request.META.get("HTTP_X_REAL_IP") or request.META.get("REMOTE_ADDR", "")
+    return request.META.get("REMOTE_ADDR", "")
 
 
 class AdminLoginThrottleMiddleware:

@@ -30,6 +30,7 @@ export type CacheTag =
 export const FALLBACK_REVALIDATE_SECONDS = 300;
 
 const TIMEOUT_MS = 4000;
+const RETRY_DELAY_MS = 400;
 
 export function apiBase(): string | null {
   return process.env.CMS_API_URL?.replace(/\/$/, '') ?? null;
@@ -56,15 +57,27 @@ export async function cmsGet<T>(path: string, { tags, locale = 'en', params = {}
   for (const [key, value] of Object.entries(params)) if (value) query.set(key, value);
   const url = `${base}/${path.replace(/^\//, '')}?${query}`;
 
-  let response: Response;
-  try {
-    response = await fetch(url, {
+  const attempt = () =>
+    fetch(url, {
       next: { tags, revalidate: FALLBACK_REVALIDATE_SECONDS },
       signal: AbortSignal.timeout(TIMEOUT_MS),
       headers: { Accept: 'application/json' },
     });
-  } catch (error) {
-    throw new CmsUnavailable(`${url}: ${(error as Error).message}`);
+
+  let response: Response;
+  try {
+    response = await attempt();
+  } catch {
+    // One retry after a short pause: a parallel build can briefly exceed the
+    // CMS's connection backlog (ECONNREFUSED), and a page built from the
+    // fallback would stay thin until its next revalidation.
+    await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+    try {
+      response = await attempt();
+    } catch (error) {
+      const cause = (error as Error & { cause?: { code?: string } }).cause?.code;
+      throw new CmsUnavailable(`${url}: ${(error as Error).message}${cause ? ` (${cause})` : ''}`);
+    }
   }
   if (response.status === 404) return null;
   if (!response.ok) throw new CmsUnavailable(`${url}: HTTP ${response.status}`);

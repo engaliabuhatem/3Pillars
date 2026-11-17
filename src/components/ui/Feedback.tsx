@@ -8,7 +8,7 @@ export function Skeleton({ className }: { className?: string }) {
 
 export function EmptyState({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className={cn('flex items-start gap-3 rounded-lg bg-surface p-8 text-ink-muted ring-1 ring-hairline ring-inset', className)}>
+    <div className={cn('tile flex items-start gap-3 p-8 text-ink-muted', className)}>
       <Info aria-hidden className="mt-1 size-5 shrink-0 text-blue" />
       <p>{children}</p>
     </div>

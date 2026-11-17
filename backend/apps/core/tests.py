@@ -254,3 +254,13 @@ class AdminLoginThrottleTests(TestCase):
         for _ in range(5):
             self.client.post(url, {"username": "x", "password": "wrong"})
         self.assertEqual(self.client.post(url, {"username": "x", "password": "wrong"}).status_code, 429)
+
+
+class ClientIpTests(TestCase):
+    def test_spoofed_header_ignored_without_a_proxy(self):
+        from django.test import RequestFactory
+
+        from apps.core.security import client_ip
+
+        request = RequestFactory().get("/", HTTP_X_REAL_IP="6.6.6.6", REMOTE_ADDR="10.0.0.1")
+        self.assertEqual(client_ip(request), "10.0.0.1")

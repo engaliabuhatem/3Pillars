@@ -104,12 +104,9 @@ DATABASES = {
     "default": env.db_url("DATABASE_URL", default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}")
 }
 
-CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": "3pillars",
-    }
-}
+# Shared by every worker: the admin login lockout and the form throttle count
+# here, so production uses a file (or Redis) cache, not per-process memory.
+CACHES = {"default": env.cache_url("CACHE_URL", default="locmemcache://3pillars")}
 
 LOGIN_URL = "admin:login"
 LOGIN_REDIRECT_URL = "admin:index"
@@ -213,6 +210,9 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_CLASSES": ["rest_framework.throttling.AnonRateThrottle"],
     "DEFAULT_THROTTLE_RATES": {"anon": "600/min", "forms": env("FORM_THROTTLE_RATE", default="10/hour")},
     "UNAUTHENTICATED_USER": None,
+    # Behind nginx (production) the client IP is the last X-Forwarded-For hop.
+    # 0 = no proxy: use the socket address, never a client-supplied header.
+    "NUM_PROXIES": env.int("NUM_PROXIES", default=0),
 }
 
 # ── Admin (adminkit) ─────────────────────────────────────────────────────

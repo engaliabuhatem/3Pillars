@@ -79,7 +79,7 @@ export function PageHeader({ locale, trail, eyebrow, title, intro, image, gate, 
         </div>
         {image && (
           <Reveal delay={0.15} className="mt-14">
-            <MediaFrame media={image} sizes="(min-width: 1440px) 1440px, 100vw" ratio="wide" priority />
+            <MediaFrame media={image} sizes="(min-width: 1440px) 1440px, 100vw" ratio="wide" priority parallax />
           </Reveal>
         )}
       </div>

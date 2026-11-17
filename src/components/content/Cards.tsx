@@ -1,41 +1,36 @@
-import { MapPin } from 'lucide-react';
-import { ArrowIcon } from '@/components/ui/Button';
-import { LinkCard } from '@/components/ui/Card';
+import { CardMore, LinkCard } from '@/components/ui/Card';
 import { MediaFrame } from '@/components/ui/CmsImage';
 import { Icon } from '@/components/ui/Icon';
-import { PendingMarker, Tag } from '@/components/ui/Tag';
+import { PendingMarker } from '@/components/ui/Tag';
 import type { Locale } from '@/i18n/config';
 import { getDictionary } from '@/i18n/dictionaries';
 import type { InsightCard as Insight, ProjectCard as Project, SectorCard as Sector, ServiceCard as Service } from '@/lib/cms/types';
 import { cn, formatDate } from '@/lib/utils';
 
+/*
+ * Content cards in the Apple pattern: image edge to edge, a quiet grey label,
+ * the title, one or two lines of grey summary, and "Learn more ›" in blue.
+ * No pills, outlines or icon boxes competing with the title.
+ */
+
+const join = (...parts: Array<string | null | undefined | false>) => parts.filter(Boolean).join(' · ');
+
 export function ProjectCard({ project, locale, sizes = '(min-width: 1024px) 33vw, 85vw' }: { project: Project; locale: Locale; sizes?: string }) {
-  const t = getDictionary(locale).project;
+  const t = getDictionary(locale);
   return (
     <LinkCard
       href={`/projects/${project.slug}`}
       locale={locale}
       title={project.title}
-      titleClassName="px-6 pt-5 text-xl font-semibold text-balance"
-      className="h-full"
+      eyebrow={join(project.sector?.name, t.project[project.status])}
+      media={<MediaFrame media={project.image} sizes={sizes} ratio="video" bleed zoom />}
     >
-      <div className="order-first p-2 pb-0">
-        <MediaFrame media={project.image} sizes={sizes} ratio="video" className="rounded-[calc(var(--radius-lg)-8px)]" />
-      </div>
-      <div className="flex flex-1 flex-col gap-4 px-6 pt-2 pb-6">
-        <p className="line-clamp-2 text-ink-muted">{project.summary}</p>
-        <div className="mt-auto flex flex-wrap items-center gap-2">
-          <Tag tone={project.status === 'completed' ? 'green' : 'blue'}>{t[project.status]}</Tag>
-          {project.sector && <Tag>{project.sector.name}</Tag>}
-          {project.country && (
-            <span className="inline-flex items-center gap-1 text-caption text-ink-muted">
-              <MapPin aria-hidden className="size-3.5" />
-              {project.location ? `${project.location}, ${project.country}` : project.country}
-            </span>
-          )}
-        </div>
-        <PendingMarker pending={project.pending} fallbacks={project.fallbacks} locale={locale} />
-      </div>
+      <p className="mt-3 line-clamp-2 text-ink-muted">{project.summary}</p>
+      {project.country && (
+        <p className="mt-3 text-caption text-ink-muted">{join(project.location, project.country)}</p>
+      )}
+      <CardMore>{t.common.learnMore}</CardMore>
+      <PendingMarker pending={project.pending} fallbacks={project.fallbacks} locale={locale} className="mt-4" />
     </LinkCard>
   );
 }
@@ -47,47 +42,47 @@ export function ServiceCard({ service, locale, large }: { service: Service; loca
       href={`/services/${service.slug}`}
       locale={locale}
       title={service.name}
-      titleClassName={cn('font-semibold text-balance', large ? 'text-h3' : 'text-xl')}
       tone={large ? 'navy' : 'surface'}
-      className="h-full gap-4 p-7 md:p-8"
+      titleSize={large ? 'text-h2' : undefined}
+      bodyClassName={large ? 'p-8 md:p-12' : undefined}
+      media={
+        <span
+          aria-hidden
+          className={cn('mx-7 mt-7 md:mx-8 md:mt-8', large ? 'text-blue-200 md:mx-12 md:mt-12' : 'text-blue')}
+        >
+          <Icon name={service.icon} className={large ? 'size-12' : 'size-9'} />
+        </span>
+      }
     >
-      <span
-        className={cn(
-          'order-first grid size-12 place-items-center rounded-md',
-          large ? 'bg-white/10 text-blue-200' : 'bg-blue-50 text-blue on-navy:bg-white/10 on-navy:text-blue-200',
-        )}
-      >
-        <Icon name={service.icon} className="size-6" />
-      </span>
-      <p className={cn(large ? 'max-w-md text-lead text-ink-inverse-muted' : 'line-clamp-3 text-ink-muted on-navy:text-ink-inverse-muted')}>{service.summary}</p>
-      <span
-        aria-hidden
-        className={cn('group/button mt-auto inline-flex items-center gap-2 pt-2 font-semibold', large ? 'text-blue-200' : 'text-blue on-navy:text-blue-200')}
-      >
-        {t.learnMore}
-        <ArrowIcon className="group-hover:translate-x-1 rtl:group-hover:-translate-x-1" />
-      </span>
-      <PendingMarker pending={service.pending} fallbacks={service.fallbacks} locale={locale} />
+      <p className={cn('mt-3', large ? 'max-w-md text-lead text-ink-inverse-muted' : 'line-clamp-3 text-ink-muted')}>{service.summary}</p>
+      <CardMore>{t.learnMore}</CardMore>
+      <PendingMarker pending={service.pending} fallbacks={service.fallbacks} locale={locale} className="mt-4" />
     </LinkCard>
   );
 }
 
+/** A full-bleed image tile with the words over a navy scrim, like Apple's product tiles. */
 export function SectorTile({ sector, locale }: { sector: Sector; locale: Locale }) {
+  const t = getDictionary(locale).common;
   return (
     <LinkCard
       href={`/sectors/${sector.slug}`}
       locale={locale}
       title={sector.name}
-      titleClassName="relative z-10 text-h3 font-semibold text-white"
       tone="navy"
-      className="min-h-80 justify-end p-7"
+      className="min-h-96"
+      bodyClassName="relative z-10 justify-end"
+      titleSize="text-h3"
+      media={
+        <div className="absolute inset-0">
+          <MediaFrame media={sector.image} sizes="(min-width: 1024px) 33vw, 100vw" className="size-full" ratio="square" bleed zoom />
+          <div aria-hidden className="hero-scrim absolute inset-0" />
+        </div>
+      }
     >
-      <div className="absolute inset-0 order-first">
-        <MediaFrame media={sector.image} sizes="(min-width: 1024px) 33vw, 100vw" className="size-full rounded-none" ratio="square" />
-        <div aria-hidden className="hero-scrim absolute inset-0" />
-      </div>
-      <p className="relative z-10 mt-2 max-w-sm text-white/85">{sector.summary}</p>
-      <PendingMarker pending={sector.pending} fallbacks={sector.fallbacks} locale={locale} className="relative z-10 mt-3" />
+      <p className="mt-2 max-w-sm text-white/85">{sector.summary}</p>
+      <CardMore pushDown={false}>{t.learnMore}</CardMore>
+      <PendingMarker pending={sector.pending} fallbacks={sector.fallbacks} locale={locale} className="mt-4" />
     </LinkCard>
   );
 }
@@ -99,21 +94,16 @@ export function InsightCard({ insight, locale }: { insight: Insight; locale: Loc
       href={`/insights/${insight.slug}`}
       locale={locale}
       title={insight.title}
-      titleClassName="px-6 pt-5 text-xl font-semibold text-balance"
-      className="h-full"
+      eyebrow={insight.category?.name}
+      media={<MediaFrame media={insight.image} sizes="(min-width: 1024px) 33vw, 100vw" bleed zoom />}
     >
-      <div className="order-first p-2 pb-0">
-        <MediaFrame media={insight.image} sizes="(min-width: 1024px) 33vw, 100vw" className="rounded-[calc(var(--radius-lg)-8px)]" />
-      </div>
-      <div className="flex flex-1 flex-col gap-3 px-6 pt-2 pb-6">
-        <p className="line-clamp-3 text-ink-muted">{insight.excerpt}</p>
-        <p className="mt-auto flex flex-wrap items-center gap-x-3 text-caption text-ink-muted">
-          {insight.category && <span className="font-semibold text-blue">{insight.category.name}</span>}
-          <time dateTime={insight.publishedAt}>{formatDate(insight.publishedAt, locale)}</time>
-          <span>{t.minRead(insight.readingMinutes)}</span>
-        </p>
-        <PendingMarker pending={insight.pending} fallbacks={insight.fallbacks} locale={locale} />
-      </div>
+      <p className="mt-3 line-clamp-3 text-ink-muted">{insight.excerpt}</p>
+      <p className="mt-auto pt-6 text-caption text-ink-muted">
+        <time dateTime={insight.publishedAt}>{formatDate(insight.publishedAt, locale)}</time>
+        {' · '}
+        {t.minRead(insight.readingMinutes)}
+      </p>
+      <PendingMarker pending={insight.pending} fallbacks={insight.fallbacks} locale={locale} className="mt-4" />
     </LinkCard>
   );
 }

@@ -162,7 +162,7 @@ export function ProposalWizard({ sectors, services, turnstileKey }: { sectors: R
 
   if (status === 'sent') {
     return (
-      <div className="rounded-lg bg-surface p-8 ring-1 ring-hairline ring-inset md:p-12" role="status">
+      <div className="tile p-8 md:p-12" role="status">
         <CircleCheck aria-hidden className="size-12 text-green" />
         <h2 className="mt-6 text-h2 font-semibold">{p.successTitle}</h2>
         <p className="mt-4 text-lead text-ink-muted">{p.successBody}</p>
@@ -308,7 +308,7 @@ function Review({
   return (
     <div className="grid gap-4">
       {groups.map((group) => (
-        <section key={group.step} className="rounded-lg bg-surface p-6 ring-1 ring-hairline ring-inset">
+        <section key={group.step} className="tile p-6 md:p-8">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="font-semibold">{p.steps[group.step]}</h3>
             <Button variant="ghost" onClick={() => onEdit(group.step)}>

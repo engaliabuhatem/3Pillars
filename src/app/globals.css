@@ -59,12 +59,16 @@
   --radius-md: 14px;
   --radius-lg: 24px;
   --radius-xl: 32px;
+  --radius-card: 28px;
   --radius-pill: 999px;
 
   /* Depth — three navy-tinted elevation steps. */
   --shadow-1: 0 1px 2px rgb(25 23 71 / 0.06), 0 2px 8px rgb(25 23 71 / 0.04);
   --shadow-2: 0 2px 6px rgb(25 23 71 / 0.06), 0 12px 32px rgb(25 23 71 / 0.08);
   --shadow-3: 0 8px 20px rgb(25 23 71 / 0.08), 0 32px 72px rgb(25 23 71 / 0.14);
+  /* Apple-style cards: no outline, a soft resting shadow that deepens on hover. */
+  --shadow-card: 0 2px 6px rgb(25 23 71 / 0.04), 0 10px 30px rgb(25 23 71 / 0.07);
+  --shadow-card-hover: 0 6px 16px rgb(25 23 71 / 0.06), 0 26px 60px rgb(25 23 71 / 0.13);
 
   /* Motion. */
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
@@ -84,6 +88,11 @@
 
   --animate-ken-burns: ken-burns 24s var(--ease-in-out) infinite alternate;
   --animate-marquee: marquee 40s linear infinite;
+  --animate-page-in: page-in 280ms var(--ease-out-expo) both;
+
+  @keyframes page-in {
+    from { opacity: 0; }
+  }
 
   @keyframes marquee {
     to { transform: translate3d(-50%, 0, 0); }
@@ -141,6 +150,25 @@
         linear-gradient(to left, var(--scrim-side), transparent 65%),
         linear-gradient(to top, var(--scrim-1) 0%, var(--scrim-2) 45%, var(--scrim-3) 74%, var(--scrim-4) 100%);
     }
+  }
+}
+
+/*
+ * The card surface. White with a soft shadow on the grey canvas; on a white
+ * section it becomes a flat grey tile instead (Apple's two card looks), and
+ * on navy a faint glass panel. Components never pick between them.
+ */
+@utility tile {
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+  [data-tone='surface'] & {
+    background: var(--color-canvas);
+    box-shadow: none;
+  }
+  [data-surface='navy'] & {
+    background: rgb(255 255 255 / 0.06);
+    box-shadow: none;
   }
 }
 
@@ -276,6 +304,34 @@
   @keyframes pillar-rise { from { transform: scaleY(0); } }
   @keyframes arc-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
   @keyframes fade-in { from { opacity: 0; } }
+}
+
+/* Page fade after in-site navigation (app/[locale]/template.tsx). */
+@layer components {
+  [data-navigated] .page-in {
+    animation: var(--animate-page-in);
+  }
+}
+
+/*
+ * Parallax on media only: the image drifts slower than the page while its
+ * frame scrolls through view. Scroll-driven CSS, no JS; browsers without
+ * animation-timeline simply show a still image.
+ */
+@layer components {
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .parallax-media img {
+        scale: 1.12;
+        animation: parallax-drift linear both;
+        animation-timeline: view();
+      }
+      @keyframes parallax-drift {
+        from { translate: 0 -5%; }
+        to { translate: 0 5%; }
+      }
+    }
+  }
 }
 
 /* Reduced motion: instant opacity changes only (brief §4.2). */

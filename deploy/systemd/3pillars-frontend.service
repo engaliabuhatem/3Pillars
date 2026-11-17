@@ -1,0 +1,19 @@
+# 3 Pillars — Next.js website. Installed by setup-server.sh.
+[Unit]
+Description=3 Pillars frontend (Next.js)
+After=network.target 3pillars-backend.service
+
+[Service]
+User=pillars
+Group=pillars
+WorkingDirectory=/srv/3pillars
+Environment=NODE_ENV=production
+EnvironmentFile=/srv/3pillars/.env.production
+ExecStart=/srv/3pillars/node_modules/.bin/next start -H 127.0.0.1 -p 3011
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

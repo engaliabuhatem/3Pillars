@@ -1,0 +1,24 @@
+# 3 Pillars — Django CMS + API under gunicorn. Installed by setup-server.sh.
+[Unit]
+Description=3 Pillars backend (Django / gunicorn)
+After=network.target
+
+[Service]
+User=pillars
+Group=pillars
+WorkingDirectory=/srv/3pillars/backend
+# Settings read backend/.env themselves (config/settings.py).
+ExecStart=/srv/3pillars/backend/.venv/bin/gunicorn config.wsgi:application \
+    --bind 127.0.0.1:8011 \
+    --workers 3 \
+    --timeout 60 \
+    --access-logfile - \
+    --error-logfile -
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

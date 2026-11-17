@@ -35,16 +35,32 @@ interface MediaFrameProps {
   ratio?: 'video' | 'portrait' | 'square' | 'wide';
   priority?: boolean;
   className?: string;
+  /** Slow scroll drift of the image inside its frame (media only, never text). */
+  parallax?: boolean;
+  /** Edge to edge inside a card: the card does the rounding and clipping. */
+  bleed?: boolean;
+  /** Slow zoom when a parent `.group` (a card) is hovered. */
+  zoom?: boolean;
 }
 
 const RATIOS = { video: 'aspect-video', portrait: 'aspect-[4/5]', square: 'aspect-square', wide: 'aspect-[21/9]' } as const;
 
+const ZOOM = 'transition-transform duration-cinematic ease-out-expo group-hover:scale-[1.04] motion-reduce:group-hover:scale-100';
+
 /** A rounded media cell. With no image it renders the branded placeholder, never a broken box. */
-export function MediaFrame({ media, sizes, ratio = 'video', priority, className }: MediaFrameProps) {
+export function MediaFrame({ media, sizes, ratio = 'video', priority, className, parallax, bleed, zoom }: MediaFrameProps) {
   return (
-    <div className={cn('relative overflow-hidden rounded-lg bg-navy-50', RATIOS[ratio], className)}>
+    <div
+      className={cn(
+        'relative overflow-hidden bg-navy-50',
+        !bleed && 'rounded-card',
+        RATIOS[ratio],
+        parallax && 'parallax-media',
+        className,
+      )}
+    >
       {media ? (
-        <CmsImage media={media} sizes={sizes} priority={priority} />
+        <CmsImage media={media} sizes={sizes} priority={priority} className={zoom ? ZOOM : undefined} />
       ) : (
         <div aria-hidden className="absolute inset-0 bg-[linear-gradient(135deg,var(--color-navy-50),var(--color-blue-50))]">
           <svg viewBox="0 0 400 225" preserveAspectRatio="xMidYMid slice" className="size-full" fill="none">

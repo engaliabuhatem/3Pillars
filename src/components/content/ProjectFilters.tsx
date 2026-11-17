@@ -30,7 +30,7 @@ export function ProjectFilters({ facets, count }: { facets: ProjectList['facets'
   const active = KEYS.some((key) => params.get(key));
 
   return (
-    <div className="mb-10 rounded-lg bg-surface p-5 ring-1 ring-hairline ring-inset md:p-6" aria-busy={pending}>
+    <div className="tile mb-10 p-5 md:p-7" aria-busy={pending}>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Select
           label={t.filters.sector}

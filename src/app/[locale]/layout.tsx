@@ -6,6 +6,7 @@ import { Analytics } from '@/components/layout/Analytics';
 import { CookieNotice, WhatsAppButton } from '@/components/layout/Extras';
 import { Footer } from '@/components/layout/Footer';
 import { Header } from '@/components/layout/Header';
+import { NavigationMarker } from '@/components/layout/NavigationMarker';
 import { PillarProgress } from '@/components/layout/PillarProgress';
 import { SmoothScroll } from '@/components/layout/SmoothScroll';
 import { RevealController } from '@/components/motion/RevealController';
@@ -77,6 +78,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
             <PillarProgress />
             <SmoothScroll />
             <RevealController />
+            <NavigationMarker />
             <LogoIntro />
           </ToastProvider>
         </LocaleProvider>

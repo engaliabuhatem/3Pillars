@@ -15,9 +15,9 @@ export function OfficeCard({ office, locale }: { office: Office; locale: Locale 
     : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${office.address} ${office.city} ${office.country}`)}`;
 
   return (
-    <article className="overflow-hidden rounded-lg bg-surface ring-1 ring-hairline ring-inset">
-      {office.mapImage && <MediaFrame media={office.mapImage} sizes="(min-width: 1024px) 40vw, 100vw" ratio="video" className="rounded-none" />}
-      <div className="grid gap-3 p-6">
+    <article className="tile overflow-hidden">
+      {office.mapImage && <MediaFrame media={office.mapImage} sizes="(min-width: 1024px) 40vw, 100vw" ratio="video" bleed />}
+      <div className="grid gap-3 p-7 md:p-8">
         <h3 className="text-xl font-semibold">
           {office.city}, {office.country}
         </h3>

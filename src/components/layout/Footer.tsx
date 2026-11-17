@@ -1,10 +1,13 @@
 import { Mail, MapPin, Phone } from 'lucide-react';
+import { LinkedInIcon } from '@/components/brand/LinkedInIcon';
 import { Logo } from '@/components/brand/Logo';
 import { ThreeArcs } from '@/components/brand/ThreeArcs';
 import { SmartLink } from '@/components/ui/SmartLink';
 import type { Locale } from '@/i18n/config';
 import { getDictionary } from '@/i18n/dictionaries';
 import type { Navigation, Office, SiteSettings } from '@/lib/cms/types';
+
+const DEVELOPER_LINKEDIN = 'https://www.linkedin.com/in/ali-abuhatem';
 
 const SOCIAL_LABEL: Record<SiteSettings['socials'][number]['network'], string> = {
   linkedin: 'LinkedIn',
@@ -108,9 +111,25 @@ export function Footer({
 
       <div className="border-t border-hairline-inverse">
         <div className="container-wide flex flex-col gap-4 py-6 text-caption text-grey-300 md:flex-row md:items-center md:justify-between">
-          <p>
-            © {year} {settings.companyName}
-          </p>
+          <div className="flex flex-col gap-1 md:flex-row md:items-center md:gap-3">
+            <p>
+              © {year} {settings.companyName}
+            </p>
+            <span aria-hidden className="hidden md:inline">·</span>
+            <p className="flex items-center gap-1.5">
+              {t.credit.developedBy}
+              <a
+                href={DEVELOPER_LINKEDIN}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-11 items-center gap-1.5 font-semibold text-blue-200 hover:text-white"
+              >
+                <LinkedInIcon className="size-4" />
+                {t.credit.developer}
+                <span className="sr-only"> (LinkedIn, {t.a11y.external})</span>
+              </a>
+            </p>
+          </div>
           <ul className="flex flex-wrap gap-x-6">
             {navigation.legal.map((item) => (
               <li key={item.link}>

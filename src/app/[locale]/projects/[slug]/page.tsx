@@ -48,7 +48,7 @@ function Facts({ project, locale }: { project: Project; locale: Locale }) {
   ];
 
   return (
-    <aside className="rounded-lg bg-surface p-7 ring-1 ring-hairline ring-inset lg:sticky lg:top-[calc(var(--spacing-nav)+2rem)]">
+    <aside className="tile p-7 md:p-8 lg:sticky lg:top-[calc(var(--spacing-nav)+2rem)]">
       <dl className="divide-y divide-hairline">
         {rows
           .filter(([, value]) => Boolean(value))
