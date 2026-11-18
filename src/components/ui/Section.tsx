@@ -33,7 +33,7 @@ export function Section({ tone = 'canvas', id, labelledBy, arcs, tight, classNam
       aria-labelledby={labelledBy}
       data-surface={tone === 'navy' ? 'navy' : undefined}
       data-tone={tone}
-      className={cn('relative isolate overflow-hidden', tight ? 'py-16 md:py-24' : 'py-section', TONES[tone], className)}
+      className={cn('relative isolate overflow-clip', tight ? 'py-16 md:py-24' : 'py-section', TONES[tone], className)}
     >
       {arcs && tone === 'navy' && <ThreeArcs className="pointer-events-none absolute inset-0 -z-10 size-full" />}
       {children}

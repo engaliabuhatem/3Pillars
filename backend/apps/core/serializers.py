@@ -66,7 +66,7 @@ class SeoMixin(serializers.Serializer):
 
 
 class SiteSettingsSerializer(LocalizedSerializer):
-    image_fields = ("hero_poster", "og_image")
+    image_fields = ("hero_poster", "hero_poster_mobile", "og_image")
     hero = serializers.SerializerMethodField()
     logos = serializers.SerializerMethodField()
     socials = serializers.SerializerMethodField()
@@ -86,6 +86,7 @@ class SiteSettingsSerializer(LocalizedSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
         data["hero"]["poster"] = data.pop("hero_poster")
+        data["hero"]["poster_mobile"] = data.pop("hero_poster_mobile")
         data["default_og_image"] = data.pop("og_image")
         return data
 

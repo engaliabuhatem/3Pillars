@@ -210,6 +210,10 @@ class SiteSettings(TimeStamped):
         "Poster image", upload_to="hero/", blank=True, validators=photo_validators(1600, 900),
         help_text="Required with a video. Shown while the video loads, to visitors who prefer reduced motion, and on its own when there is no video.",
     )
+    hero_poster_mobile = models.ImageField(
+        "Poster image (mobile)", upload_to="hero/", blank=True, validators=photo_validators(720, 1280),
+        help_text="Optional. A portrait still of the mobile video, at least 720 × 1280. Phones use the desktop poster when this is empty.",
+    )
     hero_poster_alt = models.CharField("Poster description", max_length=200, blank=True)
     hero_poster_alt_ar = models.CharField("Poster description (Arabic)", max_length=200, blank=True)
 

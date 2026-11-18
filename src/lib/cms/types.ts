@@ -42,6 +42,8 @@ export interface Hero {
   secondary: Link;
   video: { mp4: FileRef | null; webm: FileRef | null; mobile: FileRef | null };
   poster: Media | null;
+  /** Portrait still for phones; falls back to `poster`. */
+  posterMobile: Media | null;
 }
 
 export interface SiteSettings {

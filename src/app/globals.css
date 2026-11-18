@@ -73,6 +73,8 @@
   /* Motion. */
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  /* Apple's product-page curve: quick to start, long soft settle. */
+  --ease-apple: cubic-bezier(0.28, 0.11, 0.32, 1);
   --duration-fast: 150ms;
   --duration-base: 300ms;
   --duration-slow: 600ms;

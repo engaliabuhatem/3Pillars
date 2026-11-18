@@ -21,7 +21,7 @@ seconds. You never need a developer or a "redeploy".
 | To change… | Go to… |
 |---|---|
 | The big headline, sentence and buttons at the top of the home page | Site settings → **Hero** tab |
-| The background video or its still image | Site settings → **Hero video** tab (MP4, up to 8 MB, 10–20 s loop; a poster image is required) |
+| The background video or its still image | Site settings → **Hero video** tab (desktop MP4 up to 8 MB, 10–20 s loop, with a poster image, which is required; optionally a portrait mobile MP4 up to 4 MB and a mobile poster at least 720 × 1280, which phones use instead of the desktop ones) |
 | The order of the home page sections, or hide one | **Home sections** — drag rows to reorder; untick *Visible* to hide |
 | A section's small heading, title, intro or button | **Home sections** → click the section |
 | The three pillars | **The three pillars** |

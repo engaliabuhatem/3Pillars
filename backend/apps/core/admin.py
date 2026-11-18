@@ -38,7 +38,7 @@ class TOTPDeviceAdmin(OTPTOTPDeviceAdmin, ModelAdmin):
 
 @admin.register(SiteSettings)
 class SiteSettingsAdmin(BaseAdmin):
-    preview_fields = ("hero_poster",)
+    preview_fields = ("hero_poster", "hero_poster_mobile")
     readonly_fields = ["hero_video_status"]
     fieldsets = [
         tab("Switches", "coming_soon", "show_pending_content",
@@ -54,7 +54,9 @@ class SiteSettingsAdmin(BaseAdmin):
             description="The full-screen opening of the home page."),
         tab("Hero video", "hero_video_status", "hero_video", "hero_video_webm", "hero_video_mobile",
             "hero_poster_preview", "hero_poster", ("hero_poster_alt", "hero_poster_alt_ar"),
-            description="Without a video the poster image is shown with a slow zoom."),
+            "hero_poster_mobile_preview", "hero_poster_mobile",
+            description="Desktop and mobile each get their own video and poster; phones fall back to the "
+                        "desktop ones when theirs are empty. Without a video the poster is shown with a slow zoom."),
         tab("Contact", "phone", "email", ("whatsapp", "show_whatsapp"), ("address", "address_ar"),
             "linkedin", "x_twitter", "facebook", "instagram", "youtube"),
         tab("Forms", "notification_emails", "capability_gate", "turnstile_enabled", "turnstile_site_key"),

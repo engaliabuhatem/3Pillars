@@ -25,6 +25,7 @@ export function fallbackSettings(locale: Locale): SiteSettings {
       secondary: { label: ar ? 'اتصل بنا' : 'Contact us', href: '/contact' },
       video: { mp4: null, webm: null, mobile: null },
       poster: null,
+      posterMobile: null,
     },
     logos: { light: null, dark: null, favicon: null },
     phone: '',

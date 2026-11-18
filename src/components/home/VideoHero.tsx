@@ -1,7 +1,7 @@
 'use client';
 
 import { Pause, Play } from 'lucide-react';
-import Image from 'next/image';
+import Image, { getImageProps } from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import { ButtonLink } from '@/components/ui/Button';
 import { Eyebrow } from '@/components/ui/Heading';
@@ -9,7 +9,7 @@ import { LineReveal } from '@/components/motion/LineReveal';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useDictionary, useLocale } from '@/i18n/LocaleProvider';
 import { track } from '@/lib/analytics';
-import type { Hero } from '@/lib/cms/types';
+import type { Hero, Media } from '@/lib/cms/types';
 import { cn } from '@/lib/utils';
 
 /**
@@ -19,6 +19,8 @@ import { cn } from '@/lib/utils';
  * - Playback pauses off-screen and in hidden tabs, and a visible button lets
  *   anyone stop it (WCAG 2.2.2).
  * - Reduced motion: poster only, no video download at all.
+ * - Desktop and phones get their own video and poster (art direction): a
+ *   portrait cut on phones, falling back to the desktop files.
  * - No video uploaded: the poster with a slow Ken Burns drift.
  * - The navy scrim keeps text ≥ 4.5:1 over the brightest frame: at the text's
  *   position the scrim is ≥ 80% navy, so even pure white beneath composites
@@ -34,8 +36,25 @@ export function VideoHero({ hero }: { hero: Hero }) {
   const [userPaused, setUserPaused] = useState(false);
   const [playing, setPlaying] = useState(false);
 
+  // null until mounted: the server cannot know the screen, and the poster covers the gap.
+  const [phone, setPhone] = useState<boolean | null>(null);
+
   const hasVideo = Boolean(hero.video.mp4 || hero.video.webm || hero.video.mobile);
-  const showVideo = hasVideo && !reduced;
+  const showVideo = hasVideo && !reduced && phone !== null;
+  const sources = videoSources(hero.video, phone ?? false);
+
+  // A <video> picks its <source> once, so follow the breakpoint ourselves:
+  // rotating a tablet or resizing a window swaps to the right cut.
+  useEffect(() => {
+    const query = window.matchMedia(PHONE);
+    const update = () => {
+      setReady(false);
+      setPhone(query.matches);
+    };
+    update();
+    query.addEventListener('change', update);
+    return () => query.removeEventListener('change', update);
+  }, []);
 
   useEffect(() => {
     const el = video.current;
@@ -58,7 +77,7 @@ export function VideoHero({ hero }: { hero: Hero }) {
       io.disconnect();
       document.removeEventListener('visibilitychange', sync);
     };
-  }, [showVideo, userPaused]);
+  }, [showVideo, userPaused, phone]);
 
   const toggle = () => {
     track(userPaused ? 'hero_video_play' : 'hero_video_pause');
@@ -74,32 +93,29 @@ export function VideoHero({ hero }: { hero: Hero }) {
     >
       <div className="absolute inset-0 -z-10">
         {hero.poster && (
-          <Image
-            src={hero.poster.src}
-            alt=""
-            fill
-            priority
-            sizes="100vw"
+          <Poster
+            desktop={hero.poster}
+            mobile={hero.posterMobile}
             className={cn('object-cover', !hasVideo && !reduced && 'animate-ken-burns')}
           />
         )}
         {showVideo && (
           <video
+            key={sources.map((source) => source.src).join()}
             ref={video}
             muted
             loop
             playsInline
             preload="metadata"
-            poster={hero.poster?.src}
             aria-hidden
             onCanPlay={() => setReady(true)}
             onPlay={() => setPlaying(true)}
             onPause={() => setPlaying(false)}
             className={cn('absolute inset-0 size-full object-cover transition-opacity duration-slow', ready ? 'opacity-100' : 'opacity-0')}
           >
-            {hero.video.mobile && <source src={hero.video.mobile.src} type="video/mp4" media="(max-width: 767px)" />}
-            {hero.video.webm && <source src={hero.video.webm.src} type="video/webm" />}
-            {hero.video.mp4 && <source src={hero.video.mp4.src} type="video/mp4" />}
+            {sources.map((source) => (
+              <source key={source.src} src={source.src} type={source.type} />
+            ))}
           </video>
         )}
         <div
@@ -143,5 +159,39 @@ export function VideoHero({ hero }: { hero: Hero }) {
         </button>
       )}
     </section>
+  );
+}
+
+const PHONE = '(max-width: 767px)';
+
+/** The portrait cut on phones; the desktop files elsewhere. Each falls back to the other. */
+function videoSources(video: Hero['video'], phone: boolean) {
+  const mobile = video.mobile ? [{ src: video.mobile.src, type: 'video/mp4' }] : [];
+  const desktop = [
+    ...(video.webm ? [{ src: video.webm.src, type: 'video/webm' }] : []),
+    ...(video.mp4 ? [{ src: video.mp4.src, type: 'video/mp4' }] : []),
+  ];
+  if (phone) return mobile.length ? mobile : desktop;
+  return desktop.length ? desktop : mobile;
+}
+
+/**
+ * The poster is the LCP image, so it loads eagerly at high priority. With a
+ * mobile poster, phones download only the portrait still and wider screens
+ * only the landscape one.
+ */
+function Poster({ desktop, mobile, className }: { desktop: Media; mobile: Media | null; className: string }) {
+  const common = { alt: '', fill: true, sizes: '100vw', fetchPriority: 'high', loading: 'eager' } as const;
+  const { props } = getImageProps({ ...common, src: desktop.src, className });
+  if (!mobile) return <Image {...props} alt="" />;
+  const {
+    props: { srcSet: phone },
+  } = getImageProps({ ...common, src: mobile.src });
+  return (
+    <picture>
+      <source media={PHONE} srcSet={phone} sizes="100vw" />
+      {/* Art direction per the next/image docs: getImageProps already supplies the optimised srcSet. */}
+      <img {...props} alt="" />
+    </picture>
   );
 }

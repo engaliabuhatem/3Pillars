@@ -83,7 +83,7 @@ export function Header({
           <span data-intro-logo>
             <Logo variant="mark" tone={dark ? 'white' : 'color'} className="h-9 w-auto" title="" />
           </span>
-          <span data-intro-name className="text-lg font-semibold tracking-tight">{shortName}</span>
+          <span data-intro-name className="text-lg font-semibold tracking-tight whitespace-nowrap">{shortName}</span>
         </Link>
 
         <nav aria-label={t.a11y.mainNav} className="ms-auto hidden lg:block">
@@ -129,7 +129,7 @@ export function Header({
             href="/request-a-proposal"
             locale={locale}
             data-track="cta_header_proposal"
-            className={buttonClass(dark ? 'inverse' : 'primary', 'md', 'hidden sm:inline-flex')}
+            className={buttonClass(dark ? 'inverse' : 'primary', 'md', 'max-sm:hidden')}
           >
             {ctaLabel}
           </SmartLink>
