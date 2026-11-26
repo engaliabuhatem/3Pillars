@@ -1,7 +1,7 @@
 from django.urls import path
 from rest_framework.routers import SimpleRouter
 
-from apps.bd.views import DownloadLeadCreateView, EnquiryCreateView, ProposalRequestCreateView
+from apps.bd.views import ConsultationRequestCreateView, DownloadLeadCreateView, EnquiryCreateView
 from apps.careers.api import ApplicationCreateView, JobViewSet
 from apps.content import views as content
 from apps.core import views as core
@@ -16,7 +16,9 @@ router.register("offices", content.OfficeViewSet, basename="office")
 router.register("certifications", content.CertificationViewSet, basename="certification")
 router.register("downloads", content.DownloadViewSet, basename="download")
 router.register("pillars", content.PillarViewSet, basename="pillar")
-router.register("approach-stages", content.LifecycleStageViewSet, basename="approach-stage")
+router.register("approach-steps", content.ApproachStepViewSet, basename="approach-step")
+router.register("company-values", content.CompanyValueViewSet, basename="company-value")
+router.register("value-points", content.ValuePointViewSet, basename="value-point")
 router.register("pages", core.PageViewSet, basename="page")
 router.register("jobs", JobViewSet, basename="job")
 
@@ -28,7 +30,7 @@ urlpatterns = [
     path("sitemap/", core.sitemap, name="sitemap"),
     path("health/", core.health, name="health"),
     path("enquiries/", EnquiryCreateView.as_view(), name="enquiry-create"),
-    path("proposal-requests/", ProposalRequestCreateView.as_view(), name="proposal-create"),
+    path("consultation-requests/", ConsultationRequestCreateView.as_view(), name="consultation-create"),
     path("applications/", ApplicationCreateView.as_view(), name="application-create"),
     path("downloads/<int:pk>/lead/", DownloadLeadCreateView.as_view(), name="download-lead"),
     *router.urls,

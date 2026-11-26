@@ -7,29 +7,30 @@ from apps.core.serializers import LocalizedSerializer, SeoMixin, gated
 
 from .models import (
     KPI,
+    ApproachStep,
     Certification,
     Client,
+    CompanyValue,
     Download,
     Insight,
     InsightCategory,
-    LifecycleStage,
     Office,
     Pillar,
     Project,
     ProjectImage,
     ProjectMetric,
     Sector,
+    SectorFAQ,
+    SectorListItem,
     Service,
-    ServiceDeliverable,
+    ServiceBullet,
+    ServiceCapability,
     ServiceFAQ,
     ServiceStep,
     TeamMember,
     Testimonial,
+    ValuePoint,
 )
-
-
-def lines(value: str) -> list[str]:
-    return [line.strip() for line in (value or "").splitlines() if line.strip()]
 
 
 class RefSerializer(LocalizedSerializer):
@@ -51,9 +52,36 @@ class ServiceRefSerializer(RefSerializer):
 
 
 class PillarSerializer(LocalizedSerializer):
+    service = serializers.SerializerMethodField()
+
     class Meta:
         model = Pillar
-        fields = ["id", "name", "color", "icon", "summary", "detail"]
+        fields = ["id", "number", "name", "role_on_site", "color", "core_value", "summary", "detail",
+                  "core_outcomes", "covers", "is_proposed", "service"]
+
+    def get_service(self, obj):
+        service = obj.service
+        if not service or not (service.is_approved or self.context.get("include_pending")):
+            return None
+        return ServiceRefSerializer(service, context=self.context).data
+
+
+class ValuePointSerializer(LocalizedSerializer):
+    class Meta:
+        model = ValuePoint
+        fields = ["id", "title", "body"]
+
+
+class CompanyValueSerializer(LocalizedSerializer):
+    class Meta:
+        model = CompanyValue
+        fields = ["id", "value", "in_practice"]
+
+
+class ApproachStepSerializer(LocalizedSerializer):
+    class Meta:
+        model = ApproachStep
+        fields = ["id", "name", "summary"]
 
 
 class KPISerializer(LocalizedSerializer):
@@ -62,17 +90,6 @@ class KPISerializer(LocalizedSerializer):
     class Meta:
         model = KPI
         fields = ["id", "value", "prefix", "suffix", "label", "source"]
-
-
-class LifecycleStageSerializer(LocalizedSerializer):
-    deliverables = serializers.SerializerMethodField()
-
-    class Meta:
-        model = LifecycleStage
-        fields = ["id", "name", "icon", "summary", "deliverables"]
-
-    def get_deliverables(self, obj):
-        return lines(obj.deliverables_ar if self.locale == "ar" and obj.deliverables_ar else obj.deliverables)
 
 
 class ClientSerializer(LocalizedSerializer):
@@ -105,9 +122,15 @@ class TestimonialSerializer(LocalizedSerializer):
 # ── Services and sectors ─────────────────────────────────────────────────
 
 
-class ServiceDeliverableSerializer(LocalizedSerializer):
+class ServiceCapabilitySerializer(LocalizedSerializer):
     class Meta:
-        model = ServiceDeliverable
+        model = ServiceCapability
+        fields = ["title", "description"]
+
+
+class ServiceBulletSerializer(LocalizedSerializer):
+    class Meta:
+        model = ServiceBullet
         fields = ["text"]
 
 
@@ -125,29 +148,17 @@ class ServiceFAQSerializer(LocalizedSerializer):
 
 class ServiceCardSerializer(LocalizedSerializer):
     image_fields = ("image",)
+    pillar = serializers.SerializerMethodField()
 
     class Meta:
         model = Service
-        fields = ["slug", "name", "icon", "summary", "featured"]
+        fields = ["slug", "name", "icon", "summary", "pillar"]
 
-
-class ServiceSerializer(SeoMixin, ServiceCardSerializer):
-    deliverables = ServiceDeliverableSerializer(many=True, read_only=True)
-    steps = ServiceStepSerializer(many=True, read_only=True)
-    faqs = ServiceFAQSerializer(many=True, read_only=True)
-    sectors = serializers.SerializerMethodField()
-    projects = serializers.SerializerMethodField()
-
-    class Meta(ServiceCardSerializer.Meta):
-        fields = [*ServiceCardSerializer.Meta.fields, "overview", "deliverables", "steps", "faqs",
-                  "sectors", "projects", "seo", "updated_at"]
-
-    def get_sectors(self, obj):
-        return SectorRefSerializer(gated(obj.sectors.all(), self.context), many=True, context=self.context).data
-
-    def get_projects(self, obj):
-        projects = gated(obj.projects.all(), self.context)[:3]
-        return ProjectCardSerializer(projects, many=True, context=self.context).data
+    def get_pillar(self, obj):
+        pillar = obj.pillar
+        if not pillar or not (pillar.is_approved or self.context.get("include_pending")):
+            return None
+        return {"number": pillar.number, "color": pillar.color, "is_proposed": pillar.is_proposed}
 
 
 class SectorCardSerializer(LocalizedSerializer):
@@ -155,22 +166,66 @@ class SectorCardSerializer(LocalizedSerializer):
 
     class Meta:
         model = Sector
-        fields = ["slug", "name", "icon", "summary"]
+        fields = ["slug", "name", "icon", "focus_summary"]
+
+
+class ServiceSerializer(SeoMixin, ServiceCardSerializer):
+    capabilities = ServiceCapabilitySerializer(many=True, read_only=True)
+    bullets = ServiceBulletSerializer(many=True, read_only=True)
+    steps = ServiceStepSerializer(many=True, read_only=True)
+    faqs = ServiceFAQSerializer(many=True, read_only=True)
+    related_sectors = serializers.SerializerMethodField()
+    projects = serializers.SerializerMethodField()
+
+    class Meta(ServiceCardSerializer.Meta):
+        fields = [*ServiceCardSerializer.Meta.fields, "intro", "capabilities_title", "capabilities", "bullets_title",
+                  "bullets", "scope_caveat", "steps_title", "steps", "context_title", "context_body",
+                  "who_we_support", "faqs", "related_sectors", "projects", "cta_headline", "cta_label", "seo",
+                  "updated_at"]
+
+    def get_related_sectors(self, obj):
+        sectors = gated(obj.related_sectors.all(), self.context)
+        return SectorCardSerializer(sectors, many=True, context=self.context).data
+
+    def get_projects(self, obj):
+        projects = gated(obj.projects.all(), self.context)[:3]
+        return ProjectCardSerializer(projects, many=True, context=self.context).data
+
+
+class SectorListItemSerializer(LocalizedSerializer):
+    class Meta:
+        model = SectorListItem
+        fields = ["text"]
+
+
+class SectorFAQSerializer(LocalizedSerializer):
+    class Meta:
+        model = SectorFAQ
+        fields = ["question", "answer"]
 
 
 class SectorSerializer(SeoMixin, SectorCardSerializer):
-    services = serializers.SerializerMethodField()
+    list_items = SectorListItemSerializer(many=True, read_only=True)
+    faqs = SectorFAQSerializer(many=True, read_only=True)
+    related_services = serializers.SerializerMethodField()
     projects = serializers.SerializerMethodField()
+    insights = serializers.SerializerMethodField()
 
     class Meta(SectorCardSerializer.Meta):
-        fields = [*SectorCardSerializer.Meta.fields, "intro", "services", "projects", "seo", "updated_at"]
+        fields = [*SectorCardSerializer.Meta.fields, "intro", "list_title", "list_items", "scope_caveat", "our_focus",
+                  "related_services", "projects", "insights", "faqs", "seo", "updated_at"]
 
-    def get_services(self, obj):
-        return ServiceCardSerializer(gated(obj.services.all(), self.context), many=True, context=self.context).data
+    def get_related_services(self, obj):
+        services = gated(obj.related_services.select_related("pillar"), self.context)
+        return ServiceCardSerializer(services, many=True, context=self.context).data
 
     def get_projects(self, obj):
         projects = gated(obj.projects.all(), self.context)[:6]
         return ProjectCardSerializer(projects, many=True, context=self.context).data
+
+    def get_insights(self, obj):
+        insights = Insight.objects.filter(sectors=obj).visible(include_pending=self.context.get("include_pending"))
+        return InsightCardSerializer(insights.select_related("category")[:3], many=True, context=self.context).data
 
 
 # ── Projects ─────────────────────────────────────────────────────────────
@@ -194,10 +249,17 @@ class ProjectCardSerializer(LocalizedSerializer):
     image_fields = ("image",)
     sector = serializers.SerializerMethodField()
     client = serializers.SerializerMethodField()
+    our_role = serializers.CharField(source="get_our_role_display")
 
     class Meta:
         model = Project
-        fields = ["slug", "title", "summary", "location", "country", "status", "sector", "client", "featured"]
+        fields = ["slug", "title", "entry_type", "summary", "location", "country", "status", "sector", "client",
+                  "delivery_entity", "our_role", "featured"]
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["role_key"] = instance.our_role
+        return data
 
     def get_sector(self, obj):
         if obj.sector and (obj.sector.is_approved or self.context.get("include_pending")):
@@ -205,7 +267,9 @@ class ProjectCardSerializer(LocalizedSerializer):
         return None
 
     def get_client(self, obj):
-        """The public name wins; a client's own name only once the client row is approved."""
+        """A client is named only with their agreement; the public name wins over the record's name."""
+        if not obj.client_name_approved:
+            return None
         ar = self.locale == "ar"
         public = (obj.client_public_name_ar if ar else "") or obj.client_public_name
         if public:
@@ -223,8 +287,8 @@ class ProjectSerializer(SeoMixin, ProjectCardSerializer):
     related = serializers.SerializerMethodField()
 
     class Meta(ProjectCardSerializer.Meta):
-        fields = [*ProjectCardSerializer.Meta.fields, "role", "challenge", "approach", "outcome",
-                  "services", "metrics", "gallery", "facts", "related", "seo", "updated_at"]
+        fields = [*ProjectCardSerializer.Meta.fields, "our_role_detail", "challenge", "scope_of_services", "approach",
+                  "results", "services", "metrics", "gallery", "facts", "related", "seo", "updated_at"]
 
     def get_services(self, obj):
         return ServiceRefSerializer(gated(obj.services.all(), self.context), many=True, context=self.context).data
@@ -297,7 +361,7 @@ class InsightCardSerializer(LocalizedSerializer):
 
     class Meta:
         model = Insight
-        fields = ["slug", "title", "excerpt", "category", "author", "published_at", "reading_minutes"]
+        fields = ["slug", "title", "kind", "excerpt", "category", "author", "published_at", "reading_minutes"]
 
     def get_reading_minutes(self, obj):
         body = obj.body_ar if self.locale == "ar" and obj.body_ar else obj.body
@@ -307,7 +371,7 @@ class InsightCardSerializer(LocalizedSerializer):
 
 class InsightSerializer(SeoMixin, InsightCardSerializer):
     class Meta(InsightCardSerializer.Meta):
-        fields = [*InsightCardSerializer.Meta.fields, "body", "seo", "updated_at"]
+        fields = [*InsightCardSerializer.Meta.fields, "body", "our_role_statement", "seo", "updated_at"]
 
 
 class DownloadSerializer(LocalizedSerializer):

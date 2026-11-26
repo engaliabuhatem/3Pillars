@@ -57,3 +57,6 @@ export function trackingFields(locale: string): Record<string, string> {
 }
 
 export const isEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+
+/** The Area of Interest choices; the backend routes each to its own recipient list. */
+export const AREAS_OF_INTEREST = ['project_management', 'pmo_controls', 'business_development', 'strategic_advisory', 'other'] as const;

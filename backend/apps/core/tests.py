@@ -62,22 +62,24 @@ class ApprovalGateTests(TestCase):
 
     def test_related_rows_obey_gate(self):
         gate(False)
-        hidden = Sector.objects.create(name="Hidden", summary="s")
-        self.live.sectors.add(hidden)
-        self.assertEqual(self.api.get("/api/services/live/").json()["sectors"], [])
+        hidden = Sector.objects.create(name="Hidden")
+        self.live.related_sectors.add(hidden)
+        self.assertEqual(self.api.get("/api/services/live/").json()["relatedSectors"], [])
 
     def test_home_drops_sections_with_nothing_approved(self):
         gate(False)
-        HomeSection.objects.create(kind="testimonial")
-        HomeSection.objects.create(kind="services", order=1)
+        Sector.objects.create(name="Infrastructure", approval=ApprovalStatus.APPROVED)
+        HomeSection.objects.create(kind="testimonial", approval=ApprovalStatus.APPROVED)
+        HomeSection.objects.create(kind="sectors", order=1, approval=ApprovalStatus.APPROVED)
+        HomeSection.objects.create(kind="intro", order=2)
         kinds = [s["kind"] for s in self.api.get("/api/home/").json()["sections"]]
-        self.assertEqual(kinds, ["services"])
+        self.assertEqual(kinds, ["sectors"])
 
-    def test_sitemap_lists_only_visible(self):
-        gate(False)
+    def test_sitemap_lists_only_approved_even_on_staging(self):
+        gate(True)
         paths = [e["path"] for e in self.api.get("/api/sitemap/").json()]
-        self.assertIn("/services/live", paths)
-        self.assertNotIn("/services/draft", paths)
+        self.assertIn("/services/live/", paths)
+        self.assertNotIn("/services/draft/", paths)
 
 
 class SingletonTests(TestCase):
@@ -102,18 +104,19 @@ class SingletonTests(TestCase):
 class ArabicFallbackTests(TestCase):
     def setUp(self):
         gate(True)
-        Service.objects.create(name="Design Management", name_ar="إدارة التصميم", summary="Coordinating design")
+        Service.objects.create(name="PMO & Project Controls", name_ar="مكتب إدارة المشاريع وضبط المشاريع",
+                               summary="Stronger project governance")
 
     def test_arabic_replaces_english_and_reports_fallbacks(self):
         row = APIClient().get("/api/services/?locale=ar").json()[0]
-        self.assertEqual(row["name"], "إدارة التصميم")
-        self.assertEqual(row["summary"], "Coordinating design")
+        self.assertEqual(row["name"], "مكتب إدارة المشاريع وضبط المشاريع")
+        self.assertEqual(row["summary"], "Stronger project governance")
         self.assertIn("summary", row["fallbacks"])
         self.assertNotIn("nameAr", row)
 
     def test_english_has_no_fallbacks(self):
         row = APIClient().get("/api/services/").json()[0]
-        self.assertEqual(row["name"], "Design Management")
+        self.assertEqual(row["name"], "PMO & Project Controls")
         self.assertNotIn("fallbacks", row)
 
     def test_payload_is_camel_case(self):
@@ -124,17 +127,18 @@ class ArabicFallbackTests(TestCase):
 
 class SlugRedirectTests(TestCase):
     def test_slug_change_records_redirect_and_collapses_chains(self):
-        service = Service.objects.create(name="Cost Management", summary="s")
-        service.slug = "cost"
+        service = Service.objects.create(name="Project Controls", summary="s")
+        service.slug = "controls"
         service.save()
-        service.slug = "cost-and-qs"
+        service.slug = "pmo-project-controls"
         service.save()
-        self.assertEqual(Redirect.objects.get(old_path="/services/cost-management").new_path, "/services/cost-and-qs")
-        self.assertEqual(Redirect.objects.get(old_path="/services/cost").new_path, "/services/cost-and-qs")
+        self.assertEqual(Redirect.objects.get(old_path="/services/project-controls/").new_path,
+                         "/services/pmo-project-controls/")
+        self.assertEqual(Redirect.objects.get(old_path="/services/controls/").new_path, "/services/pmo-project-controls/")
 
     def test_slug_made_unique(self):
-        a = Sector.objects.create(name="Energy", summary="s")
-        b = Sector.objects.create(name="Energy", summary="s")
+        a = Sector.objects.create(name="Infrastructure")
+        b = Sector.objects.create(name="Infrastructure")
         self.assertNotEqual(a.slug, b.slug)
 
 
@@ -156,7 +160,7 @@ class RevalidationTests(TestCase):
             thread.side_effect = lambda target, args, daemon: mock.Mock(start=lambda: sent.append(args[0]))
             with self.captureOnCommitCallbacks(execute=True):
                 Service.objects.create(name="A", summary="s")
-                Sector.objects.create(name="B", summary="s")
+                Sector.objects.create(name="B")
         self.assertEqual(len(sent), 1)
         self.assertTrue({"services", "sectors", "home", "navigation"} <= set(sent[0]))
 
@@ -179,8 +183,8 @@ class RevalidationTests(TestCase):
 @override_settings(MEDIA_ROOT=TMP_MEDIA)
 class ImageTests(TestCase):
     def test_renditions_written_on_save(self):
-        sector = Sector(name="Energy", summary="s", image_alt="Power line", image_alt_ar="خط كهرباء")
-        sector.image = SimpleUploadedFile("energy.png", png_bytes(), content_type="image/png")
+        sector = Sector(name="Infrastructure", image_alt="Harbour cranes at dusk", image_alt_ar="رافعات الميناء عند الغروب")
+        sector.image = SimpleUploadedFile("port.png", png_bytes(), content_type="image/png")
         sector.full_clean()
         sector.save()
         storage = sector.image.storage
@@ -188,17 +192,24 @@ class ImageTests(TestCase):
         self.assertTrue(storage.exists(f"{sector.image.name}.avif"))
 
     def test_small_image_rejected(self):
-        sector = Sector(name="Energy", summary="s", image_alt="x", image_alt_ar="x")
+        sector = Sector(name="Infrastructure", image_alt="x", image_alt_ar="x")
         sector.image = SimpleUploadedFile("tiny.png", png_bytes(200, 100), content_type="image/png")
         with self.assertRaises(ValidationError) as ctx:
             sector.full_clean()
         self.assertIn("image", ctx.exception.message_dict)
 
     def test_alt_text_required_in_both_languages(self):
-        sector = Sector(name="Energy", summary="s", image="sectors/x.png")
+        sector = Sector(name="Infrastructure", image="sectors/x.png")
         with self.assertRaises(ValidationError) as ctx:
             sector.clean()
         self.assertEqual(set(ctx.exception.message_dict), {"image_alt", "image_alt_ar"})
+
+    def test_alt_text_cannot_be_the_keyword(self):
+        sector = Sector(name="Infrastructure", image="sectors/x.png", primary_keyword="Infrastructure project management",
+                        image_alt="infrastructure project management", image_alt_ar="وصف")
+        with self.assertRaises(ValidationError) as ctx:
+            sector.clean()
+        self.assertEqual(set(ctx.exception.message_dict), {"image_alt"})
 
 
 class RoleTests(TestCase):
@@ -223,7 +234,7 @@ class AdminSmokeTests(TestCase):
         self.client.force_login(User.objects.create_superuser("root", "root@example.com", "x" * 14))
         category = InsightCategory.objects.create(name="News", slug="news")
         Insight.objects.create(title="Hello", excerpt="e", body="<p>b</p>", category=category)
-        Project.objects.create(title="P", summary="s")
+        Project.objects.create(title="P", summary="s", delivery_entity="Delivery Co", our_role="advisor")
 
     def test_every_registered_model_renders(self):
         for model, model_admin in admin.site._registry.items():

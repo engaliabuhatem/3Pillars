@@ -5,7 +5,7 @@ import { quietVisit } from './helpers';
 test.beforeEach(async ({ page }) => quietVisit(page));
 
 test('hero video can be paused and resumed with the button', async ({ page }) => {
-  await page.goto('/en');
+  await page.goto('/en/');
   const toggle = page.getByTestId('hero-video-toggle');
   // The video mounts after hydration (it is never server-rendered, so reduced-motion visitors never download it).
   const hasVideo = await toggle.waitFor({ timeout: 8000 }).then(() => true, () => false);
@@ -21,7 +21,7 @@ test('hero video can be paused and resumed with the button', async ({ page }) =>
 });
 
 test('hero scrim keeps white text ≥ 4.5:1 over the brightest possible frame', async ({ page }) => {
-  await page.goto('/en');
+  await page.goto('/en/');
   // Worst case: replace the footage with pure white and hide the text, then
   // sample the brightest pixel behind where the headline and subline sit.
   await page.addStyleTag({
@@ -57,7 +57,7 @@ test.describe('reduced motion', () => {
   test.use({ reducedMotion: 'reduce' });
 
   test('no video, no smooth scroll, nothing hidden for reveal, no running animations', async ({ page }) => {
-    await page.goto('/en');
+    await page.goto('/en/');
     await expect(page.locator('section video')).toHaveCount(0);
     await expect(page.locator('html.lenis')).toHaveCount(0);
     await expect(page.locator('[data-intro]')).toHaveCount(0);

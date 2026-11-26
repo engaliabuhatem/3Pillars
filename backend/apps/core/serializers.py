@@ -10,7 +10,17 @@ what still needs translating. The `_ar` columns themselves are never sent.
 from rest_framework import serializers
 
 from .images import file_payload, image_payload
-from .models import FooterColumn, HomeSection, NavItem, Page, PageBlock, PageBlockItem, Redirect, SiteSettings
+from .models import (
+    ApprovalStatus,
+    FooterColumn,
+    HomeSection,
+    NavItem,
+    Page,
+    PageBlock,
+    PageBlockItem,
+    Redirect,
+    SiteSettings,
+)
 
 
 def gated(queryset, context):
@@ -49,6 +59,15 @@ class LocalizedSerializer(serializers.ModelSerializer):
         return data
 
 
+def indexable(approved: bool, ar_reviewed: bool) -> dict[str, bool]:
+    """
+    Which language versions search engines may index. Unapproved pages never;
+    an Arabic page only once its translation has been reviewed, so machine
+    drafts and English fallbacks never compete in search.
+    """
+    return {"en": approved, "ar": approved and ar_reviewed}
+
+
 class SeoMixin(serializers.Serializer):
     seo = serializers.SerializerMethodField()
 
@@ -57,8 +76,10 @@ class SeoMixin(serializers.Serializer):
         pick = lambda f: (getattr(obj, f"{f}_ar", "") if ar else "") or getattr(obj, f, "")  # noqa: E731
         return {
             "title": pick("seo_title"),
-            "description": pick("seo_description"),
+            "description": pick("meta_description"),
+            "h1": pick("h1"),
             "image": image_payload(obj, "og_image", request=self.context.get("request")),
+            "indexable": indexable(obj.is_approved, obj.ar_reviewed),
         }
 
 
@@ -77,24 +98,54 @@ class SiteSettingsSerializer(LocalizedSerializer):
         model = SiteSettings
         fields = [
             "company_name", "short_name", "tagline", "group_relationship", "hero", "logos",
-            "phone", "email", "whatsapp", "show_whatsapp", "address", "socials",
-            "seo_title", "seo_description", "analytics", "cookie_notice",
+            "phone", "email", "whatsapp", "show_whatsapp", "address", "business_hours", "socials",
+            "seo_title", "seo_description", "home_seo", "prefer_www", "analytics", "cookie_notice", "consent_text",
             "turnstile_enabled", "turnstile_site_key", "capability_gate", "capability_statement",
             "coming_soon", "show_pending_content",
         ]
+
+    #: Shown only once Site settings → Contact → "Contact details verified" is ticked.
+    CONTACT_FIELDS = ("phone", "email", "whatsapp", "address", "business_hours")
+
+    home_seo = serializers.SerializerMethodField()
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
         data["hero"]["poster"] = data.pop("hero_poster")
         data["hero"]["poster_mobile"] = data.pop("hero_poster_mobile")
         data["default_og_image"] = data.pop("og_image")
+        if not instance.contact_verified:
+            for field in self.CONTACT_FIELDS:
+                data[field] = ""
+            data["show_whatsapp"] = False
+            data["socials"] = []
+        if instance.copy_approval != ApprovalStatus.APPROVED and not self.context.get("include_pending"):
+            data["tagline"] = ""
+            data["home_seo"] = {**data["home_seo"], "title": "", "description": "", "h1": ""}
+            hero = data["hero"]
+            for key in ("h1", "eyebrow", "headline", "subline"):
+                hero[key] = ""
+            hero["primary"]["label"] = hero["secondary"]["label"] = ""
+        data["copy_pending"] = instance.copy_approval != ApprovalStatus.APPROVED
         return data
+
+    def get_home_seo(self, obj):
+        ar = self.locale == "ar"
+        pick = lambda f: (getattr(obj, f"{f}_ar") if ar else "") or getattr(obj, f)  # noqa: E731
+        return {
+            "title": pick("home_seo_title"),
+            "description": pick("home_meta_description"),
+            "h1": pick("home_h1"),
+            "image": None,
+            "indexable": indexable(obj.copy_approval == ApprovalStatus.APPROVED, obj.home_ar_reviewed),
+        }
 
     def get_hero(self, obj):
         ar = self.locale == "ar"
         pick = lambda f: (getattr(obj, f"{f}_ar") if ar else "") or getattr(obj, f)  # noqa: E731
         request = self.context.get("request")
         return {
+            "h1": pick("home_h1"),
             "eyebrow": pick("hero_eyebrow"),
             "headline": pick("hero_headline"),
             "subline": pick("hero_subline"),
@@ -136,16 +187,21 @@ class SiteSettingsSerializer(LocalizedSerializer):
 # ── Navigation ───────────────────────────────────────────────────────────
 
 
+def shown(items, context):
+    """Visible items whose target has content (see navigation.py)."""
+    resolver = context["links"]
+    return [item for item in items if item.visible and resolver.has_content(item.link)]
+
+
 class NavItemSerializer(LocalizedSerializer):
     children = serializers.SerializerMethodField()
 
     class Meta:
         model = NavItem
-        fields = ["label", "link", "mega_menu", "children"]
+        fields = ["label", "link", "mega_menu", "is_cta", "children"]
 
     def get_children(self, obj):
-        children = [c for c in obj.children.all() if c.visible]
-        return NavItemSerializer(children, many=True, context=self.context).data
+        return NavItemSerializer(shown(obj.children.all(), self.context), many=True, context=self.context).data
 
 
 class FooterColumnSerializer(LocalizedSerializer):
@@ -156,8 +212,8 @@ class FooterColumnSerializer(LocalizedSerializer):
         fields = ["title", "items"]
 
     def get_items(self, obj):
-        items = [i for i in obj.items.all() if i.visible and i.menu == NavItem.Menu.FOOTER]
-        return NavItemSerializer(items, many=True, context=self.context).data
+        items = [i for i in obj.items.all() if i.menu == NavItem.Menu.FOOTER]
+        return NavItemSerializer(shown(items, self.context), many=True, context=self.context).data
 
 
 class RedirectSerializer(serializers.ModelSerializer):
@@ -188,20 +244,38 @@ class PageBlockItemSerializer(LocalizedSerializer):
 class PageBlockSerializer(LocalizedSerializer):
     image_fields = ("image",)
     items = PageBlockItemSerializer(many=True, read_only=True)
+    entries = serializers.SerializerMethodField()
 
     class Meta:
         model = PageBlock
         fields = ["id", "kind", "navy", "eyebrow", "title", "body", "attribution", "image_on_end",
-                  "cta_label", "cta_link", "items"]
+                  "cta_label", "cta_link", "items", "entries"]
+
+    def get_entries(self, obj):
+        """Values and approach steps live in their own tables; the block shows them in place."""
+        from apps.content import serializers as content
+        from apps.content.models import ApproachStep, CompanyValue
+
+        source = {
+            PageBlock.Kind.VALUES: (CompanyValue, content.CompanyValueSerializer),
+            PageBlock.Kind.APPROACH_STEPS: (ApproachStep, content.ApproachStepSerializer),
+        }.get(obj.kind)
+        if not source:
+            return []
+        model, serializer = source
+        rows = model.objects.visible(include_pending=self.context.get("include_pending"))
+        return serializer(rows, many=True, context=self.context).data
 
 
 class PageSerializer(SeoMixin, LocalizedSerializer):
     image_fields = ("image",)
     blocks = serializers.SerializerMethodField()
 
+    path = serializers.CharField(source="get_public_path")
+
     class Meta:
         model = Page
-        fields = ["slug", "title", "eyebrow", "intro", "blocks", "seo", "updated_at"]
+        fields = ["slug", "path", "title", "eyebrow", "intro", "cta_label", "blocks", "seo", "updated_at"]
 
     def get_blocks(self, obj):
         blocks = [b for b in obj.blocks.all() if b.visible]

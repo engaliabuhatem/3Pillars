@@ -7,11 +7,12 @@ import { Button } from '@/components/ui/Button';
 import { useDictionary } from '@/i18n/LocaleProvider';
 import type { ProjectList } from '@/lib/cms/types';
 
-const KEYS = ['sector', 'service', 'country', 'status'] as const;
+const KEYS = ['sector', 'service', 'role', 'type'] as const;
 
 /**
  * Filters live in the URL, so a filtered list can be shared, bookmarked and
  * rendered on the server. Changing one replaces the query and drops paging.
+ * Each filter offers only values that at least one visible project has.
  */
 export function ProjectFilters({ facets, count }: { facets: ProjectList['facets']; count: number }) {
   const t = useDictionary();
@@ -49,23 +50,20 @@ export function ProjectFilters({ facets, count }: { facets: ProjectList['facets'
           options={facets.services.map((s) => ({ value: s.slug, label: s.name }))}
         />
         <Select
-          label={t.filters.country}
+          label={t.filters.role}
           required
           placeholder={t.filters.all}
-          value={params.get('country') ?? ''}
-          onChange={(e) => set('country', e.target.value)}
-          options={facets.countries.map((c) => ({ value: c, label: c }))}
+          value={params.get('role') ?? ''}
+          onChange={(e) => set('role', e.target.value)}
+          options={facets.roles.map((r) => ({ value: r.value, label: t.project.roles[r.value] ?? r.label }))}
         />
         <Select
-          label={t.filters.status}
+          label={t.filters.type}
           required
           placeholder={t.filters.all}
-          value={params.get('status') ?? ''}
-          onChange={(e) => set('status', e.target.value)}
-          options={[
-            { value: 'ongoing', label: t.project.ongoing },
-            { value: 'completed', label: t.project.completed },
-          ]}
+          value={params.get('type') ?? ''}
+          onChange={(e) => set('type', e.target.value)}
+          options={facets.types.map((r) => ({ value: r.value, label: t.filters.types[r.value] ?? r.label }))}
         />
       </div>
       <div className="mt-5 flex items-center justify-between gap-4">

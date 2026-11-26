@@ -1,28 +1,48 @@
+from django.utils import timezone
 from rest_framework import serializers
 
 from apps.content.models import Download, Sector, Service
+from apps.core.models import SiteSettings
 
-from .models import DownloadLead, Enquiry, ProposalAttachment, ProposalRequest
+from .models import AreaOfInterest, DownloadLead, Enquiry, ProposalAttachment, ProposalRequest
 from .services import SpamCheckMixin
 
 TRACKING = ["locale", "source_page", "utm_source", "utm_medium", "utm_campaign"]
 
 
-class EnquirySerializer(SpamCheckMixin, serializers.ModelSerializer):
-    consent = serializers.BooleanField()
+class ConsentMixin(serializers.Serializer):
+    """Records exactly which consent wording the sender agreed to, and when."""
 
-    class Meta:
-        model = Enquiry
-        fields = ["topic", "name", "organisation", "role", "email", "phone", "country", "subject", "message",
-                  "consent", *TRACKING, "website", "turnstile_token"]
+    consent = serializers.BooleanField()
 
     def validate_consent(self, value):
         if not value:
-            raise serializers.ValidationError("Please agree to the privacy notice so we can reply.")
+            raise serializers.ValidationError("Please agree to be contacted so we can reply.")
         return value
 
+    def create(self, validated):
+        site = SiteSettings.load()
+        arabic = validated.get("locale") == "ar"
+        validated["consent_text"] = (site.consent_text_ar if arabic else "") or site.consent_text
+        validated["consent_version"] = site.consent_version
+        validated["consent_at"] = timezone.now()
+        return super().create(validated)
 
-class ProposalRequestSerializer(SpamCheckMixin, serializers.ModelSerializer):
+
+class EnquirySerializer(ConsentMixin, SpamCheckMixin, serializers.ModelSerializer):
+    """Contact Us: the fields named in the content document, in its order."""
+
+    organisation = serializers.CharField(max_length=200)
+    country = serializers.CharField(max_length=80)
+    area_of_interest = serializers.ChoiceField(choices=AreaOfInterest.choices)
+
+    class Meta:
+        model = Enquiry
+        fields = ["name", "organisation", "email", "phone", "country", "area_of_interest", "message",
+                  "consent", *TRACKING, "website", "turnstile_token"]
+
+
+class ConsultationRequestSerializer(ConsentMixin, SpamCheckMixin, serializers.ModelSerializer):
     MAX_ATTACHMENTS = 5
 
     consent = serializers.BooleanField()
@@ -33,16 +53,13 @@ class ProposalRequestSerializer(SpamCheckMixin, serializers.ModelSerializer):
         required=False, write_only=True,
     )
 
+    area_of_interest = serializers.ChoiceField(choices=AreaOfInterest.choices)
+
     class Meta:
         model = ProposalRequest
         fields = ["name", "organisation", "organisation_type", "role", "email", "phone", "country",
-                  "project_type", "sector", "services", "location", "project_stage", "budget", "timeline", "scope",
-                  "attachments", "consent", *TRACKING, "website", "turnstile_token"]
-
-    def validate_consent(self, value):
-        if not value:
-            raise serializers.ValidationError("Please agree to the privacy notice so we can reply.")
-        return value
+                  "area_of_interest", "project_type", "sector", "services", "location", "project_stage", "budget",
+                  "timeline", "scope", "attachments", "consent", *TRACKING, "website", "turnstile_token"]
 
     def validate_attachments(self, files):
         if len(files) > self.MAX_ATTACHMENTS:

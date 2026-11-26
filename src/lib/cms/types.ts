@@ -23,10 +23,19 @@ export interface Gated {
   fallbacks?: string[];
 }
 
+/** Which language versions search engines may index (approved; Arabic also reviewed). */
+export interface Indexable {
+  en: boolean;
+  ar: boolean;
+}
+
 export interface Seo {
   title: string;
   description: string;
+  /** The page's single <h1>; empty means "use the title". */
+  h1: string;
   image: Media | null;
+  indexable: Indexable;
 }
 
 export interface Link {
@@ -35,6 +44,8 @@ export interface Link {
 }
 
 export interface Hero {
+  /** The home page <h1>, set as the small line above the display headline. */
+  h1: string;
   eyebrow: string;
   headline: string;
   subline: string;
@@ -49,27 +60,34 @@ export interface Hero {
 export interface SiteSettings {
   companyName: string;
   shortName: string;
+  /** The positioning statement. */
   tagline: string;
   groupRelationship: string;
   hero: Hero;
   logos: { light: FileRef | null; dark: FileRef | null; favicon: FileRef | null };
+  /** Contact fields are empty until Site settings marks them verified. */
   phone: string;
   email: string;
   whatsapp: string;
   showWhatsapp: boolean;
   address: string;
+  businessHours: string;
   socials: Array<{ network: 'linkedin' | 'x_twitter' | 'facebook' | 'instagram' | 'youtube'; href: string }>;
   seoTitle: string;
   seoDescription: string;
+  homeSeo: Seo;
+  preferWww: boolean;
   defaultOgImage: Media | null;
   analytics: { provider: 'plausible' | 'ga4'; id: string } | null;
   cookieNotice: string;
+  consentText: string;
   turnstileEnabled: boolean;
   turnstileSiteKey: string;
   capabilityGate: boolean;
   capabilityStatement: { id: number; slug: string; gated: boolean } | null;
   comingSoon: boolean;
   showPendingContent: boolean;
+  copyPending: boolean;
   fallbacks?: string[];
 }
 
@@ -77,6 +95,7 @@ export interface NavItem {
   label: string;
   link: string;
   megaMenu: '' | 'services' | 'sectors';
+  isCta: boolean;
   children: NavItem[];
 }
 
@@ -93,13 +112,39 @@ export interface Ref {
   icon?: string;
 }
 
+export type PillarColor = 'green' | 'blue' | 'grey';
+
 export interface Pillar extends Gated {
   id: number;
+  number: number;
   name: string;
-  color: 'green' | 'blue' | 'grey';
-  icon: string;
+  roleOnSite: 'lead' | 'enabling';
+  color: PillarColor;
+  coreValue: string;
   summary: string;
   detail: string;
+  coreOutcomes: string;
+  covers: string;
+  isProposed: boolean;
+  service: Ref | null;
+}
+
+export interface ValuePoint extends Gated {
+  id: number;
+  title: string;
+  body: string;
+}
+
+export interface CompanyValue extends Gated {
+  id: number;
+  value: string;
+  inPractice: string;
+}
+
+export interface ApproachStep extends Gated {
+  id: number;
+  name: string;
+  summary: string;
 }
 
 export interface KPI extends Gated {
@@ -109,14 +154,6 @@ export interface KPI extends Gated {
   suffix: string;
   label: string;
   source: string;
-}
-
-export interface LifecycleStage extends Gated {
-  id: number;
-  name: string;
-  icon: string;
-  summary: string;
-  deliverables: string[];
 }
 
 export interface Client extends Gated {
@@ -142,17 +179,32 @@ export interface ServiceCard extends Gated {
   name: string;
   icon: string;
   summary: string;
-  featured: boolean;
+  pillar: { number: number; color: PillarColor; isProposed: boolean } | null;
   image: Media | null;
 }
 
+export interface Faq {
+  question: string;
+  answer: string;
+}
+
 export interface Service extends ServiceCard {
-  overview: string;
-  deliverables: Array<{ text: string }>;
+  intro: string;
+  capabilitiesTitle: string;
+  capabilities: Array<{ title: string; description: string }>;
+  bulletsTitle: string;
+  bullets: Array<{ text: string }>;
+  scopeCaveat: string;
+  stepsTitle: string;
   steps: Array<{ title: string; body: string }>;
-  faqs: Array<{ question: string; answer: string }>;
-  sectors: Ref[];
+  contextTitle: string;
+  contextBody: string;
+  whoWeSupport: string;
+  faqs: Faq[];
+  relatedSectors: SectorCard[];
   projects: ProjectCard[];
+  ctaHeadline: string;
+  ctaLabel: string;
   seo: Seo;
   updatedAt: string;
 }
@@ -161,38 +213,51 @@ export interface SectorCard extends Gated {
   slug: string;
   name: string;
   icon: string;
-  summary: string;
+  focusSummary: string;
   image: Media | null;
 }
 
 export interface Sector extends SectorCard {
   intro: string;
-  services: ServiceCard[];
+  listTitle: string;
+  listItems: Array<{ text: string }>;
+  scopeCaveat: string;
+  ourFocus: string;
+  relatedServices: ServiceCard[];
   projects: ProjectCard[];
+  insights: InsightCard[];
+  faqs: Faq[];
   seo: Seo;
   updatedAt: string;
 }
 
 export type ProjectStatus = 'ongoing' | 'completed';
+export type ProjectRole = 'project_manager' | 'pmo_support' | 'advisor' | 'bd_support' | 'other';
 
 export interface ProjectCard extends Gated {
   slug: string;
   title: string;
+  entryType: 'selected' | 'case_study';
   summary: string;
   location: string;
   country: string;
   status: ProjectStatus;
   sector: Ref | null;
   client: string | null;
+  deliveryEntity: string;
+  /** Display label of 3 Pillars' role. */
+  ourRole: string;
+  roleKey: ProjectRole;
   featured: boolean;
   image: Media | null;
 }
 
 export interface Project extends ProjectCard {
-  role: string;
+  ourRoleDetail: string;
   challenge: string;
+  scopeOfServices: string;
   approach: string;
-  outcome: string;
+  results: string;
   services: Ref[];
   metrics: Array<{ label: string; value: string; unit: string; delta: string }>;
   gallery: Array<{ caption: string; image: Media | null }>;
@@ -214,8 +279,13 @@ export interface Paginated<T> {
   results: T[];
 }
 
+export interface Facet {
+  value: string;
+  label: string;
+}
+
 export interface ProjectList extends Paginated<ProjectCard> {
-  facets: { countries: string[]; sectors: Ref[]; services: Ref[] };
+  facets: { sectors: Ref[]; services: Ref[]; roles: Facet[]; types: Facet[] };
 }
 
 export interface InsightCategory {
@@ -223,25 +293,30 @@ export interface InsightCategory {
   name: string;
 }
 
+export type InsightKind = 'article' | 'perspective' | 'delivery' | 'news';
+
 export interface InsightCard extends Gated {
   slug: string;
   title: string;
+  kind: InsightKind;
   excerpt: string;
   category: InsightCategory | null;
   author: string;
-  publishedAt: string;
+  publishedAt: string | null;
   readingMinutes: number;
   image: Media | null;
 }
 
 export interface Insight extends InsightCard {
   body: string;
+  ourRoleStatement: string;
   seo: Seo;
   updatedAt: string;
 }
 
 export interface InsightList extends Paginated<InsightCard> {
   categories: InsightCategory[];
+  kinds: Array<{ value: InsightKind; label: string }>;
 }
 
 export interface TeamMember extends Gated {
@@ -302,7 +377,17 @@ export interface Job extends JobCard {
   updatedAt: string;
 }
 
-export type BlockKind = 'rich_text' | 'image_text' | 'stats' | 'quote' | 'gallery' | 'cta' | 'faq';
+export type BlockKind =
+  | 'rich_text'
+  | 'image_text'
+  | 'stats'
+  | 'quote'
+  | 'gallery'
+  | 'cta'
+  | 'faq'
+  | 'values'
+  | 'approach_steps'
+  | 'affiliation';
 
 export interface PageBlock {
   id: number;
@@ -317,13 +402,17 @@ export interface PageBlock {
   ctaLink: string;
   image: Media | null;
   items: Array<{ label: string; value: string; text: string; image: Media | null }>;
+  /** Company values or approach steps, for blocks of those kinds. */
+  entries: Array<CompanyValue | ApproachStep>;
 }
 
 export interface Page extends Gated {
   slug: string;
+  path: string;
   title: string;
   eyebrow: string;
   intro: string;
+  ctaLabel: string;
   image: Media | null;
   blocks: PageBlock[];
   seo: Seo;
@@ -332,18 +421,18 @@ export interface Page extends Gated {
 
 export type HomeSectionKind =
   | 'hero'
-  | 'trust'
+  | 'intro'
   | 'pillars'
-  | 'services'
+  | 'sectors'
+  | 'value'
+  | 'cta'
+  | 'trust'
   | 'kpis'
   | 'projects'
-  | 'approach'
-  | 'sectors'
   | 'testimonial'
-  | 'insights'
-  | 'cta';
+  | 'insights';
 
-interface SectionBase<K extends HomeSectionKind, D> {
+interface SectionBase<K extends HomeSectionKind, D> extends Gated {
   kind: K;
   eyebrow: string;
   title: string;
@@ -358,16 +447,16 @@ interface SectionBase<K extends HomeSectionKind, D> {
 
 export type HomeSection =
   | SectionBase<'hero', Hero>
-  | SectionBase<'trust', Client[]>
+  | SectionBase<'intro', Record<string, never>>
   | SectionBase<'pillars', Pillar[]>
-  | SectionBase<'services', ServiceCard[]>
+  | SectionBase<'sectors', SectorCard[]>
+  | SectionBase<'value', ValuePoint[]>
+  | SectionBase<'cta', { id?: number; slug?: string; gated?: boolean }>
+  | SectionBase<'trust', Client[]>
   | SectionBase<'kpis', KPI[]>
   | SectionBase<'projects', ProjectCard[]>
-  | SectionBase<'approach', LifecycleStage[]>
-  | SectionBase<'sectors', SectorCard[]>
   | SectionBase<'testimonial', Testimonial>
-  | SectionBase<'insights', InsightCard[]>
-  | SectionBase<'cta', { id?: number; slug?: string; gated?: boolean }>;
+  | SectionBase<'insights', InsightCard[]>;
 
 export interface Home {
   sections: HomeSection[];
@@ -382,4 +471,6 @@ export interface Redirect {
 export interface SitemapEntry {
   path: string;
   updatedAt: string;
+  /** Whether the Arabic version may be listed. */
+  ar: boolean;
 }

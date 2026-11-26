@@ -1,0 +1,440 @@
+/*
+  3 Pillars admin — Apple Human Interface Guidelines pass over Unfold.
+
+  Loaded after adminkit.css and admin-brand.css. Unfold's own stylesheet comes
+  later in the <head> but lives entirely inside @layer, so these unlayered
+  rules win without !important.
+
+  Principles applied:
+    * System type (SF Pro on Apple devices, Segoe UI Variable on Windows),
+      tight tracking on titles, 13–15px body.
+    * Window background #F5F5F7, content on white "inset grouped" cards with
+      hairline separators instead of drop shadows.
+    * Translucent, blurred sidebar with a tinted selection pill.
+    * Segmented controls for tabs; soft 4px focus ring in the accent colour.
+    * Semantic tinted badges (green = live, orange = waiting).
+
+  Dark mode keys off Unfold's `html.dark`, like adminkit.
+*/
+
+:root {
+  --ap-font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "SF Arabic",
+    "Segoe UI Variable Text", "Segoe UI", "Helvetica Neue", "Noto Sans Arabic", Tahoma, sans-serif;
+  --ap-canvas: #F5F5F7;
+  --ap-surface: #FFFFFF;
+  --ap-sidebar: rgb(246 246 248 / 0.78);
+  --ap-hairline: rgb(60 60 67 / 0.14);       /* separator */
+  --ap-hairline-strong: rgb(60 60 67 / 0.22);
+  --ap-fill: rgb(118 118 128 / 0.12);        /* tertiarySystemFill — segmented track */
+  --ap-fill-hover: rgb(118 118 128 / 0.08);
+  --ap-label: #1D1D1F;
+  --ap-label-2: #6E6E73;
+  --ap-accent: var(--color-primary-600);
+  --ap-accent-tint: color-mix(in srgb, var(--color-primary-600) 12%, transparent);
+  --ap-ring: color-mix(in srgb, var(--color-primary-600) 32%, transparent);
+  --ap-radius-card: 14px;
+  --ap-radius-control: 10px;
+  --ap-shadow-card: 0 0 0 0.5px rgb(0 0 0 / 0.04), 0 1px 2px rgb(0 0 0 / 0.04);
+  --ap-shadow-raised: 0 1px 3px rgb(0 0 0 / 0.1), 0 0 0 0.5px rgb(0 0 0 / 0.06);
+
+  /* Unfold's Tailwind theme font. */
+  --font-sans: var(--ap-font);
+}
+
+html.dark {
+  --ap-canvas: #000000;
+  --ap-surface: #1C1C1E;
+  --ap-sidebar: rgb(28 28 30 / 0.78);
+  --ap-hairline: rgb(84 84 88 / 0.6);
+  --ap-hairline-strong: rgb(84 84 88 / 0.85);
+  --ap-fill: rgb(118 118 128 / 0.24);
+  --ap-fill-hover: rgb(118 118 128 / 0.16);
+  --ap-label: #F5F5F7;
+  --ap-label-2: #98989D;
+  --ap-accent: var(--color-primary-400);
+  --ap-accent-tint: color-mix(in srgb, var(--color-primary-400) 20%, transparent);
+  --ap-ring: color-mix(in srgb, var(--color-primary-400) 40%, transparent);
+  --ap-shadow-card: 0 0 0 0.5px rgb(255 255 255 / 0.06);
+  --ap-shadow-raised: 0 1px 3px rgb(0 0 0 / 0.5), 0 0 0 0.5px rgb(255 255 255 / 0.1);
+}
+
+/* ── Type ─────────────────────────────────────────────────────────────── */
+
+body {
+  font-family: var(--ap-font);
+  font-size: 13.5px;
+  letter-spacing: -0.003em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--ap-canvas);
+}
+
+/* Large-title feel for the page heading and breadcrumb tail. */
+#header-inner h1,
+#header-inner [class*="tracking-tight"] {
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+/* ── Window and content surfaces ─────────────────────────────────────── */
+
+#main {
+  background: var(--ap-canvas);
+}
+
+/* Header: a translucent toolbar over the canvas. */
+#main > div:first-child:has(#header-inner) {
+  background: color-mix(in srgb, var(--ap-canvas) 82%, transparent);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 0.5px solid var(--ap-hairline);
+}
+
+/* ── Sidebar (source list) ───────────────────────────────────────────── */
+
+#nav-sidebar,
+#nav-sidebar-inner,
+#nav-sidebar > *,
+#nav-sidebar-inner > * {
+  background-color: transparent;
+}
+
+#nav-sidebar {
+  background: var(--ap-sidebar);
+  -webkit-backdrop-filter: saturate(180%) blur(24px);
+  backdrop-filter: saturate(180%) blur(24px);
+  border-inline-end: 0.5px solid var(--ap-hairline);
+}
+
+/* Section headers: small, semibold, secondary — like Finder's sidebar. */
+#nav-sidebar-inner h2 {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--ap-label-2);
+  margin-top: 0.85rem;
+}
+
+#nav-sidebar-inner li a {
+  height: 32px;
+  border-radius: 8px;
+  color: var(--ap-label);
+  font-weight: 450;
+  transition: background-color 0.15s ease;
+}
+
+#nav-sidebar-inner li a:hover {
+  background: var(--ap-fill-hover);
+  color: var(--ap-label);
+}
+
+#nav-sidebar-inner li a .material-symbols-outlined {
+  color: var(--ap-accent);
+  font-size: 19px;
+}
+
+/* Selection pill: accent tint, accent label. */
+#nav-sidebar-inner li a.active {
+  background: var(--ap-accent-tint);
+  color: var(--ap-accent);
+  font-weight: 600;
+}
+
+/* Sidebar search: a rounded search field on the fill colour. */
+#nav-sidebar-inner input[type="search"],
+#nav-sidebar-inner input[type="text"] {
+  background: var(--ap-fill);
+  border-color: transparent;
+  box-shadow: none;
+  border-radius: 9px;
+}
+
+/* ── Segmented controls (top tabs and fieldset tabs) ─────────────────── */
+
+#tabs-items,
+[x-data*="activeFieldsetTab"] > div:first-child > nav {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  background: var(--ap-fill);
+  border: 0;
+  border-radius: 9px;
+}
+
+[x-data*="activeFieldsetTab"] > div:first-child {
+  border-bottom: 0;
+  padding: 0.25rem 0 1rem;
+}
+
+#tabs-items > a,
+[x-data*="activeFieldsetTab"] > div:first-child > nav > a {
+  border: 0;
+  border-radius: 7px;
+  padding: 5px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ap-label);
+  background: transparent;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+#tabs-items > a:hover,
+[x-data*="activeFieldsetTab"] > div:first-child > nav > a:hover {
+  background: var(--ap-fill-hover);
+  color: var(--ap-label);
+}
+
+#tabs-items > a.active,
+[x-data*="activeFieldsetTab"] > div:first-child > nav > a.active {
+  background: var(--ap-surface);
+  color: var(--ap-label);
+  font-weight: 600;
+  box-shadow: var(--ap-shadow-raised);
+}
+
+html.dark #tabs-items > a.active,
+html.dark [x-data*="activeFieldsetTab"] > div:first-child > nav > a.active {
+  background: #636366;
+}
+
+/* Unfold draws a white strip under the active tab to join it to the panel. */
+[x-data*="activeFieldsetTab"] > div:first-child > nav > a.active::after {
+  display: none;
+}
+
+/* ── Forms: inset grouped sections ───────────────────────────────────── */
+
+.form-rows {
+  background: var(--ap-surface);
+  border: 0;
+  border-radius: var(--ap-radius-card);
+  box-shadow: var(--ap-shadow-card);
+}
+
+.tab-wrapper > fieldset > .form-rows,
+.tab-wrapper .form-rows {
+  border-radius: var(--ap-radius-card);
+}
+
+.form-rows .form-row {
+  border-color: var(--ap-hairline);
+}
+
+/* Field labels: secondary, medium weight. */
+.form-rows label {
+  color: var(--ap-label);
+  font-weight: 500;
+}
+
+/* Help text and fieldset descriptions. */
+.form-rows .help,
+.form-rows [class*="text-subtle"],
+.tab-wrapper > fieldset > div.text-subtle {
+  color: var(--ap-label-2);
+  font-size: 12px;
+}
+
+/* Inline group headings ("Deliverables", "Results"…). */
+.inline-group h2,
+fieldset.module > h2 {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ap-label);
+}
+
+/* ── Controls ─────────────────────────────────────────────────────────── */
+
+#main :is(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="submit"]):not([type="button"]):not([type="hidden"]),
+  select,
+  textarea
+) {
+  border-radius: var(--ap-radius-control);
+  border-color: var(--ap-hairline-strong);
+  box-shadow: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Focus: accent border plus a soft 4px halo, not a hard outline. */
+#main :is(input, select, textarea):focus-visible,
+#main :is(input, select, textarea):focus {
+  outline: none;
+  border-color: var(--ap-accent);
+  box-shadow: 0 0 0 4px var(--ap-ring);
+}
+
+#main input[type="checkbox"]:focus-visible,
+#main input[type="radio"]:focus-visible {
+  box-shadow: 0 0 0 3px var(--ap-ring);
+}
+
+/* Readonly values sit on the fill colour, like a disabled macOS field. */
+#main .readonly {
+  color: var(--ap-label);
+}
+
+/* Rich text editor chrome. */
+#main trix-toolbar {
+  border-radius: var(--ap-radius-control) var(--ap-radius-control) 0 0;
+}
+
+#main trix-editor {
+  border-radius: 0 0 var(--ap-radius-control) var(--ap-radius-control);
+  min-height: 8rem;
+}
+
+/* Buttons: medium weight, no heavy shadow. */
+#main button,
+#main a[class*="bg-primary-600"],
+#submit-row button {
+  font-weight: 500;
+  letter-spacing: -0.005em;
+}
+
+#submit-row > div {
+  border-top: 0.5px solid var(--ap-hairline);
+}
+
+/* ── Change lists ─────────────────────────────────────────────────────── */
+
+#changelist-form .overflow-x-auto {
+  border: 0;
+  border-radius: var(--ap-radius-card);
+  box-shadow: var(--ap-shadow-card);
+  background: var(--ap-surface);
+}
+
+#result_list thead th {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ap-label-2);
+  background: var(--ap-surface);
+}
+
+#result_list thead th a {
+  color: inherit;
+}
+
+#result_list td,
+#result_list th {
+  border-color: var(--ap-hairline);
+}
+
+#result_list tbody {
+  background: transparent;
+}
+
+#result_list tbody:nth-of-type(even) {
+  background: rgb(118 118 128 / 0.035);
+}
+
+html.dark #result_list tbody:nth-of-type(even) {
+  background: rgb(255 255 255 / 0.025);
+}
+
+#result_list tbody tr.data-row:hover {
+  background: var(--ap-accent-tint);
+}
+
+#result_list th a,
+#result_list td a {
+  font-weight: 500;
+}
+
+/* Filter / search toolbar above the list. */
+#changelist :is(.filter-open-button, input[type="search"], input[name="q"]) {
+  border-radius: var(--ap-radius-control);
+  box-shadow: none;
+}
+
+/* ── Status badges (rendered by admin_base / bd.admin) ───────────────── */
+
+.ap-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 9px 2px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 18px;
+  white-space: nowrap;
+  color: var(--ap-badge-fg);
+  background: var(--ap-badge-bg);
+}
+
+.ap-badge::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* Text colours keep ≥ 4.5:1 on their tint. */
+.ap-badge--green  { --ap-badge-fg: #1B7A34; --ap-badge-bg: rgb(52 199 89 / 0.14); }
+.ap-badge--orange { --ap-badge-fg: #8F4A00; --ap-badge-bg: rgb(255 149 0 / 0.16); }
+.ap-badge--blue   { --ap-badge-fg: #0B5EAC; --ap-badge-bg: rgb(0 122 255 / 0.11); }
+.ap-badge--indigo { --ap-badge-fg: #3634A3; --ap-badge-bg: rgb(88 86 214 / 0.13); }
+.ap-badge--gray   { --ap-badge-fg: #48484A; --ap-badge-bg: rgb(118 118 128 / 0.14); }
+
+html.dark .ap-badge--green  { --ap-badge-fg: #30D158; --ap-badge-bg: rgb(48 209 88 / 0.18); }
+html.dark .ap-badge--orange { --ap-badge-fg: #FF9F0A; --ap-badge-bg: rgb(255 159 10 / 0.18); }
+html.dark .ap-badge--blue   { --ap-badge-fg: #64A8FF; --ap-badge-bg: rgb(10 132 255 / 0.2); }
+html.dark .ap-badge--indigo { --ap-badge-fg: #9D9BFF; --ap-badge-bg: rgb(94 92 230 / 0.24); }
+html.dark .ap-badge--gray   { --ap-badge-fg: #C7C7CC; --ap-badge-bg: rgb(118 118 128 / 0.26); }
+
+.ap-overdue {
+  color: #C4271B;
+  font-weight: 600;
+}
+
+html.dark .ap-overdue {
+  color: #FF6961;
+}
+
+.ap-thumb {
+  object-fit: cover;
+  border-radius: 10px;
+  box-shadow: 0 0 0 0.5px var(--ap-hairline-strong);
+}
+
+.ap-muted {
+  color: var(--ap-label-2);
+}
+
+.ap-link {
+  color: var(--ap-accent);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.ap-link:hover {
+  text-decoration: underline;
+}
+
+/* ── Login ────────────────────────────────────────────────────────────── */
+
+body.login #page,
+body.login {
+  background: var(--ap-surface);
+}
+
+/* ── Motion ───────────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  #nav-sidebar-inner li a,
+  #tabs-items > a,
+  [x-data*="activeFieldsetTab"] > div:first-child > nav > a,
+  #main :is(input, select, textarea) {
+    transition: none;
+  }
+}
+
+/* Character count under SEO inputs (js/seo-counter.js). */
+.ap-seo-count {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--ap-label-2);
+}

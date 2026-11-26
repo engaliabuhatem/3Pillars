@@ -6,8 +6,8 @@ import { RichText } from '@/components/ui/RichText';
 import { Section } from '@/components/ui/Section';
 import { getDictionary } from '@/i18n/dictionaries';
 import { getInsight } from '@/lib/cms';
-import { resolveLocale } from '@/lib/page';
-import { articleJsonLd, buildMetadata, JsonLd, siteUrl } from '@/lib/seo';
+import { heading, pageCopy, resolveLocale } from '@/lib/page';
+import { articleJsonLd, buildMetadata, JsonLd, pageUrl } from '@/lib/seo';
 import { formatDate } from '@/lib/utils';
 
 type Props = PageProps<'/[locale]/insights/[slug]'>;
@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: Props) {
   if (!insight) return {};
   return buildMetadata({
     locale,
-    path: `/insights/${insight.slug}`,
+    path: `/insights/${insight.slug}/`,
     title: insight.title,
     description: insight.excerpt,
     seo: insight.seo,
@@ -35,31 +35,38 @@ export default async function InsightPage({ params }: Props) {
   const insight = await getInsight(locale, (await params).slug);
   if (!insight) notFound();
   const t = getDictionary(locale);
-  const url = `${siteUrl()}/${locale}/insights/${insight.slug}`;
+  const index = await pageCopy(locale, 'insights', t.sections.insights);
+  const url = pageUrl(locale, `/insights/${insight.slug}/`);
 
   return (
     <>
       <PageHeader
         locale={locale}
         trail={[
-          { name: t.sections.insights, path: '/insights' },
-          { name: insight.title, path: `/insights/${insight.slug}` },
+          { name: index.title, path: '/insights/' },
+          { name: insight.title, path: `/insights/${insight.slug}/` },
         ]}
-        eyebrow={insight.category?.name}
-        title={insight.title}
+        eyebrow={[t.insights.kinds[insight.kind], insight.category?.name].filter(Boolean).join(' · ')}
+        title={heading({ title: insight.title, seo: insight.seo })}
         intro={insight.excerpt}
         image={insight.image}
         gate={insight}
       >
         <p className="flex flex-wrap gap-x-4 text-caption text-ink-muted">
           {insight.author && <span className="font-semibold text-navy">{insight.author}</span>}
-          <time dateTime={insight.publishedAt}>{formatDate(insight.publishedAt, locale)}</time>
+          {insight.publishedAt && <time dateTime={insight.publishedAt}>{formatDate(insight.publishedAt, locale)}</time>}
           <span>{t.common.minRead(insight.readingMinutes)}</span>
         </p>
       </PageHeader>
       <Section tone="surface" tight>
         <article className="container-content">
           <RichText html={insight.body} className="mx-auto text-lead" />
+          {insight.ourRoleStatement && (
+            <aside className="mx-auto mt-12 max-w-prose rounded-card bg-canvas p-7 ring-1 ring-hairline ring-inset">
+              <h2 className="eyebrow text-blue">{t.insights.ourRole}</h2>
+              <p className="mt-3">{insight.ourRoleStatement}</p>
+            </aside>
+          )}
           <div className="mx-auto mt-14 max-w-prose border-t border-hairline pt-8">
             <ShareLinks url={url} title={insight.title} />
           </div>

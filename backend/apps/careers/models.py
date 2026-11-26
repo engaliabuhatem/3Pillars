@@ -8,7 +8,7 @@ from apps.core.models import Publishable, Seo, Slugged
 
 class Job(Publishable, Slugged, Seo):
     cache_tags = ("jobs",)
-    public_path = "/careers/{slug}"
+    public_path = "/careers/{slug}/"
 
     class EmploymentType(models.TextChoices):
         FULL_TIME = "full_time", "Full-time"

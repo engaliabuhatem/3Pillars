@@ -14,9 +14,9 @@ export function MegaMenu({ item, mega, locale }: { item: NavItem; mega: Navigati
       ? item.children.map((child) => ({ key: child.link, href: child.link, name: child.label, summary: '', icon: '' }))
       : mega[item.megaMenu].map((entry) => ({
           key: entry.slug,
-          href: `${base}/${entry.slug}`,
+          href: `${base}/${entry.slug}/`,
           name: entry.name,
-          summary: entry.summary,
+          summary: 'focusSummary' in entry ? entry.focusSummary : entry.summary,
           icon: entry.icon,
         }));
 

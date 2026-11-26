@@ -13,7 +13,7 @@ from rest_framework.views import APIView
 
 from apps.content.models import Download
 
-from .serializers import DownloadLeadSerializer, EnquirySerializer, ProposalRequestSerializer, download_target
+from .serializers import ConsultationRequestSerializer, DownloadLeadSerializer, EnquirySerializer, download_target
 from .services import notify
 
 
@@ -28,17 +28,18 @@ class EnquiryCreateView(FormView):
         serializer.is_valid(raise_exception=True)
         enquiry = serializer.save()
         notify("enquiry", enquiry, admin_path=reverse("admin:bd_enquiry_change", args=[enquiry.pk]),
-               summary=f"{enquiry.who} — {enquiry.subject or enquiry.get_topic_display()}")
+               summary=f"{enquiry.who} — {enquiry.get_area_of_interest_display()}")
         return Response({"ok": True}, status=status.HTTP_201_CREATED)
 
 
-class ProposalRequestCreateView(FormView):
+class ConsultationRequestCreateView(FormView):
     def post(self, request):
-        serializer = ProposalRequestSerializer(data=request.data, context={"request": request})
+        serializer = ConsultationRequestSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
-        proposal = serializer.save()
-        notify("proposal", proposal, admin_path=reverse("admin:bd_proposalrequest_change", args=[proposal.pk]),
-               summary=f"{proposal.who} — {proposal.project_type}, {proposal.location}")
+        consultation = serializer.save()
+        notify("consultation", consultation,
+               admin_path=reverse("admin:bd_proposalrequest_change", args=[consultation.pk]),
+               summary=f"{consultation.who} — {consultation.get_area_of_interest_display()}, {consultation.project_type}")
         return Response({"ok": True}, status=status.HTTP_201_CREATED)
 
 

@@ -1,22 +1,19 @@
 import { notFound } from 'next/navigation';
-import type { ReactNode } from 'react';
 import { ProjectCard } from '@/components/content/Cards';
 import { CtaBand } from '@/components/content/CtaBand';
 import { PageHeader } from '@/components/content/PageHeader';
+import { CaseStudyFacts, RelatedLinks } from '@/components/content/Sections';
+import { pillarNumber } from '@/components/content/pillarStyle';
 import { SectionHeading } from '@/components/ui/Heading';
 import { Lightbox } from '@/components/ui/Lightbox';
 import { RichText } from '@/components/ui/RichText';
 import { Section } from '@/components/ui/Section';
-import { SmartLink } from '@/components/ui/SmartLink';
 import { Tag } from '@/components/ui/Tag';
 import { Reveal } from '@/components/motion/Reveal';
-import type { Locale } from '@/i18n/config';
 import { getDictionary } from '@/i18n/dictionaries';
 import { getProject } from '@/lib/cms';
-import type { Project } from '@/lib/cms/types';
-import { resolveLocale } from '@/lib/page';
+import { heading, pageCopy, resolveLocale } from '@/lib/page';
 import { buildMetadata } from '@/lib/seo';
-import { formatDate, formatMoney } from '@/lib/utils';
 
 type Props = PageProps<'/[locale]/projects/[slug]'>;
 
@@ -27,97 +24,67 @@ export async function generateMetadata({ params }: Props) {
   const locale = await resolveLocale(params);
   const project = await getProject(locale, (await params).slug);
   if (!project) return {};
-  return buildMetadata({ locale, path: `/projects/${project.slug}`, title: project.title, description: project.summary, seo: project.seo, image: project.image });
+  return buildMetadata({ locale, path: `/projects/${project.slug}/`, title: project.title, description: project.summary, seo: project.seo, image: project.image });
 }
 
-function Facts({ project, locale }: { project: Project; locale: Locale }) {
-  const t = getDictionary(locale).project;
-  const { facts } = project;
-  const rows: Array<[string, ReactNode]> = [
-    [t.client, project.client],
-    [t.location, [project.location, project.country].filter(Boolean).join(', ')],
-    [t.sector, project.sector && <SmartLink href={`/sectors/${project.sector.slug}`} locale={locale} className="text-blue hover:underline">{project.sector.name}</SmartLink>],
-    [t.value, facts.value && formatMoney(facts.value.amount, facts.value.currency, locale)],
-    [
-      t.duration,
-      facts.start &&
-        `${formatDate(facts.start, locale, 'month')} – ${facts.end ? formatDate(facts.end, locale, 'month') : t.ongoing}${facts.durationMonths ? ` · ${t.months(facts.durationMonths)}` : ''}`,
-    ],
-    [t.role, project.role],
-    [t.status, <Tag key="status" tone={project.status === 'completed' ? 'green' : 'blue'}>{t[project.status]}</Tag>],
-  ];
-
-  return (
-    <aside className="tile p-7 md:p-8 lg:sticky lg:top-[calc(var(--spacing-nav)+2rem)]">
-      <dl className="divide-y divide-hairline">
-        {rows
-          .filter(([, value]) => Boolean(value))
-          .map(([label, value]) => (
-            <div key={label} className="grid gap-1 py-4 first:pt-0 last:pb-0">
-              <dt className="text-caption font-semibold text-ink-muted">{label}</dt>
-              <dd className="font-semibold">{value}</dd>
-            </div>
-          ))}
-      </dl>
-      {project.services.length > 0 && (
-        <div className="mt-6 border-t border-hairline pt-6">
-          <p className="mb-3 text-caption font-semibold text-ink-muted">{t.services}</p>
-          <ul className="flex flex-wrap gap-2">
-            {project.services.map((service) => (
-              <li key={service.slug}>
-                <SmartLink href={`/services/${service.slug}`} locale={locale}>
-                  <Tag tone="blue">{service.name}</Tag>
-                </SmartLink>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </aside>
-  );
-}
-
+/**
+ * The case-study order from the content document: overview facts, the
+ * challenge, our role, scope of services, approach, results, visuals. Who
+ * delivered the project is always stated, first among the facts.
+ */
 export default async function ProjectPage({ params }: Props) {
   const locale = await resolveLocale(params);
   const project = await getProject(locale, (await params).slug);
   if (!project) notFound();
   const t = getDictionary(locale);
+  const index = await pageCopy(locale, 'projects', t.sections.projects);
+  const role = [t.project.roles[project.roleKey] ?? project.ourRole, project.ourRoleDetail].filter(Boolean).join(' · ');
 
   const story = [
     { title: t.sections.challenge, html: project.challenge },
-    { title: t.sections.ourApproach, html: project.approach },
-    { title: t.sections.outcome, html: project.outcome },
-  ].filter((part) => part.html);
+    { title: t.sections.ourRole, text: role },
+    { title: t.sections.scopeOfServices, html: project.scopeOfServices },
+    { title: t.sections.approachTaken, html: project.approach },
+    { title: t.sections.results, html: project.results },
+  ].filter((part) => part.html || part.text);
 
   return (
     <>
       <PageHeader
         locale={locale}
         trail={[
-          { name: t.sections.projects, path: '/projects' },
-          { name: project.title, path: `/projects/${project.slug}` },
+          { name: index.title, path: '/projects/' },
+          { name: project.title, path: `/projects/${project.slug}/` },
         ]}
-        eyebrow={project.sector?.name || t.sections.projects}
-        title={project.title}
+        eyebrow={t.filters.types[project.entryType.replace('_', '-')]}
+        title={heading({ title: project.title, seo: project.seo })}
         intro={project.summary}
         image={project.image}
         gate={project}
       />
 
-      <Section tone="surface" tight>
-        <div className="container-wide grid gap-14 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-20">
-          <div className="flex flex-col gap-16">
+      <Section tone="surface" tight labelledBy="overview-title">
+        <div className="container-wide">
+          <h2 id="overview-title" className="mb-8 text-h3 font-semibold">
+            {t.sections.overview}
+          </h2>
+          <CaseStudyFacts project={project} locale={locale} />
+        </div>
+      </Section>
+
+      {story.length > 0 && (
+        <Section tight>
+          <div className="container-content flex flex-col gap-16">
             {story.map((part, i) => (
               <Reveal key={part.title}>
-                <p className="mb-2 text-caption font-semibold text-blue tabular-nums">0{i + 1}</p>
+                <p className="mb-2 text-caption font-semibold text-blue tabular-nums">{pillarNumber(i + 1)}</p>
                 <h2 className="mb-6 text-h2 font-semibold">{part.title}</h2>
-                <RichText html={part.html} />
+                {part.html ? <RichText html={part.html} /> : <p className="text-lead">{part.text}</p>}
               </Reveal>
             ))}
           </div>
-          <Facts project={project} locale={locale} />
-        </div>
-      </Section>
+        </Section>
+      )}
 
       {project.metrics.length > 0 && (
         <Section tone="navy" arcs tight>
@@ -142,11 +109,13 @@ export default async function ProjectPage({ params }: Props) {
       {project.gallery.some((item) => item.image) && (
         <Section tight>
           <div className="container-wide">
-            <SectionHeading title={t.sections.gallery} />
+            <SectionHeading title={t.sections.visuals} />
             <Lightbox items={project.gallery} />
           </div>
         </Section>
       )}
+
+      <RelatedLinks title={t.project.services} base="/services" items={project.services} locale={locale} />
 
       {project.related.length > 0 && (
         <Section tone="surface" tight>

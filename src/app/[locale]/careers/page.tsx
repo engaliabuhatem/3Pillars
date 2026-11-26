@@ -9,11 +9,14 @@ import { SmartLink } from '@/components/ui/SmartLink';
 import { PendingMarker, Tag } from '@/components/ui/Tag';
 import { getDictionary } from '@/i18n/dictionaries';
 import { getJobs, getSettings } from '@/lib/cms';
-import { pageCopy, pageMetadata, resolveLocale } from '@/lib/page';
+import { ButtonLink } from '@/components/ui/Button';
+import { heading, pageCopy, pageMetadata, resolveLocale } from '@/lib/page';
 
 type Props = PageProps<'/[locale]/careers'>;
 
-export const generateMetadata = ({ params }: Props) => pageMetadata(params, 'careers', '/careers', (l) => getDictionary(l).sections.careers);
+const PATH = '/careers/';
+
+export const generateMetadata = ({ params }: Props) => pageMetadata(params, 'careers', PATH, (l) => getDictionary(l).sections.careers);
 
 export default async function CareersPage({ params }: Props) {
   const locale = await resolveLocale(params);
@@ -22,9 +25,15 @@ export default async function CareersPage({ params }: Props) {
 
   return (
     <>
-      <PageHeader locale={locale} trail={[{ name: page.title, path: '/careers' }]} eyebrow={page.eyebrow} title={page.title} intro={page.intro} image={page.image} gate={page} />
+      <PageHeader locale={locale} trail={[{ name: page.title, path: PATH }]} eyebrow={page.eyebrow} title={heading(page)} intro={page.intro} image={page.image} gate={page}>
+        {page.ctaLabel && (
+          <ButtonLink href="#open-roles" locale={locale} arrow track="careers_view_opportunities">
+            {page.ctaLabel}
+          </ButtonLink>
+        )}
+      </PageHeader>
       <Blocks blocks={page.blocks} locale={locale} />
-      <Section tone="surface" tight>
+      <Section tone="surface" tight id="open-roles">
         <div className="container-wide">
           <SectionHeading title={t.sections.openRoles} />
           {jobs.length === 0 ? (
@@ -35,7 +44,7 @@ export default async function CareersPage({ params }: Props) {
                 <li key={job.slug} className="group relative flex flex-col gap-2 py-6 md:flex-row md:items-center md:justify-between">
                   <div>
                     <h3 className="text-xl font-semibold">
-                      <SmartLink href={`/careers/${job.slug}`} locale={locale} className="after:absolute after:inset-0 group-hover:text-blue">
+                      <SmartLink href={`/careers/${job.slug}/`} locale={locale} className="after:absolute after:inset-0 group-hover:text-blue">
                         {job.title}
                       </SmartLink>
                     </h3>

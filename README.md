@@ -18,7 +18,8 @@ cd backend
 python -m venv .venv && .venv/Scripts/activate      # macOS/Linux: source .venv/bin/activate
 cp .env.example .env                                 # then set SECRET_KEY and REVALIDATE_SECRET
 python manage.py migrate
-python manage.py seed                                # placeholder structure, all "awaiting approval"
+python manage.py seed_content                        # the content document's copy, all "awaiting approval"
+python manage.py check_content                       # copy matches the document, no banned wording, no near-duplicate pages
 python manage.py createsuperuser
 python manage.py runserver 127.0.0.1:8000
 
@@ -65,7 +66,7 @@ src/app/globals.css       design tokens (@theme) — components use tokens only
 backend/adminkit          copied verbatim from HS Investment — never edit
 backend/apps/core         bases, settings, nav, pages, redirects, webhook, security
 backend/apps/content      services, sectors, projects, insights, team, KPIs…
-backend/apps/bd           enquiries, proposal requests, download leads, pipeline
+backend/apps/bd           enquiries, consultation requests, download leads, pipeline
 backend/apps/careers      jobs, applications (private CV storage)
 ```
 

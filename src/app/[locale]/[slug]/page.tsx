@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import { Blocks } from '@/components/content/Blocks';
 import { PageHeader } from '@/components/content/PageHeader';
 import { getPage } from '@/lib/cms';
-import { resolveLocale } from '@/lib/page';
+import { heading, resolveLocale } from '@/lib/page';
 import { buildMetadata } from '@/lib/seo';
 
 /**
@@ -18,18 +18,19 @@ export const generateStaticParams = () => [];
 export async function generateMetadata({ params }: Props) {
   const locale = await resolveLocale(params);
   const page = await getPage(locale, (await params).slug);
-  if (!page) return {};
-  return buildMetadata({ locale, path: `/${page.slug}`, title: page.title, description: page.intro, seo: page.seo, image: page.image });
+  if (!page || page.path !== `/${page.slug}/`) return {};
+  return buildMetadata({ locale, path: page.path, title: page.title, description: page.intro, seo: page.seo, image: page.image });
 }
 
 export default async function CmsPage({ params }: Props) {
   const locale = await resolveLocale(params);
   const page = await getPage(locale, (await params).slug);
-  if (!page) notFound();
+  // Pages that live under another address (e.g. /about-us/leadership-team/) are only served there.
+  if (!page || page.path !== `/${page.slug}/`) notFound();
 
   return (
     <>
-      <PageHeader locale={locale} trail={[{ name: page.title, path: `/${page.slug}` }]} eyebrow={page.eyebrow} title={page.title} intro={page.intro} image={page.image} gate={page} />
+      <PageHeader locale={locale} trail={[{ name: page.title, path: page.path }]} eyebrow={page.eyebrow} title={heading(page)} intro={page.intro} image={page.image} gate={page} />
       <Blocks blocks={page.blocks} locale={locale} />
     </>
   );

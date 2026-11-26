@@ -4,20 +4,26 @@ from django.urls import path, reverse
 from django.utils import timezone
 from django.utils.html import format_html
 
-from apps.core.admin_base import BaseAdmin, BaseStackedInline
+from apps.core.admin_base import BaseAdmin, BaseStackedInline, badge
 
 from .models import OPEN_STAGES, DownloadLead, Enquiry, EnquiryNote, ProposalAttachment, ProposalNote, ProposalRequest, Stage
 
-STAGE_COLORS = {
-    Stage.NEW: ("#F1F7FF", "#014888"),
-    Stage.QUALIFIED: ("#FFF8EB", "#8A5300"),
-    Stage.PROPOSAL_SENT: ("#DEE0ED", "#191747"),
-    Stage.WON: ("#F0FAF2", "#044B22"),
-    Stage.LOST: ("#E5E6E6", "#454648"),
+# Badge tones (static/css/admin-apple.css).
+STAGE_TONES = {
+    Stage.NEW: "blue",
+    Stage.QUALIFIED: "orange",
+    Stage.PROPOSAL_SENT: "indigo",
+    Stage.WON: "green",
+    Stage.LOST: "gray",
 }
 
-SUBMITTED = ["name", "organisation", "role", "email", "phone", "country", "locale", "source_page",
-             "utm_source", "utm_medium", "utm_campaign", "consent", "submitted_at"]
+SUBMITTED = ["name", "organisation", "role", "email", "phone", "country", "area_of_interest", "locale", "source_page",
+             "utm_source", "utm_medium", "utm_campaign", "consent", "consent_text", "consent_version", "consent_at",
+             "submitted_at"]
+SOURCE = ("Source & consent", {"classes": ["collapse"], "fields": [
+    "submitted_at", "locale", "source_page", ("utm_source", "utm_medium", "utm_campaign"),
+    "consent", "consent_text", ("consent_version", "consent_at"),
+]})
 
 
 class OverdueFilter(admin.SimpleListFilter):
@@ -92,17 +98,15 @@ class LeadAdmin(BaseAdmin):
 
     @admin.display(description="Stage", ordering="stage")
     def stage_badge(self, obj):
-        bg, fg = STAGE_COLORS[obj.stage]
-        return format_html('<span style="padding:2px 10px;border-radius:999px;font-size:11px;font-weight:600;'
-                           'background:{};color:{}">{}</span>', bg, fg, obj.get_stage_display())
+        return badge(obj.get_stage_display(), STAGE_TONES[obj.stage])
 
     @admin.display(description="Follow up", ordering="next_follow_up")
     def follow_up(self, obj):
         if not obj.next_follow_up:
             return "—"
         overdue = obj.next_follow_up < timezone.localdate() and obj.stage in OPEN_STAGES
-        return format_html('<span style="color:{};font-weight:{}">{}</span>', "#B42318" if overdue else "inherit",
-                           600 if overdue else 400, obj.next_follow_up.strftime("%d %b %Y"))
+        return format_html('<span class="{}">{}</span>', "ap-overdue" if overdue else "",
+                           obj.next_follow_up.strftime("%d %b %Y"))
 
     @admin.display(description="Handled", boolean=True, ordering="is_handled")
     def handled(self, obj):
@@ -115,17 +119,16 @@ class EnquiryNoteInline(NoteInline):
 
 @admin.register(Enquiry)
 class EnquiryAdmin(LeadAdmin):
-    list_display = ["submitted_at", "who", "topic", "email", "stage_badge", "owner", "follow_up", "handled"]
-    list_filter = ["topic", *LeadAdmin.list_filter]
-    search_fields = ["name", "organisation", "email", "subject", "message"]
-    readonly_fields = [*SUBMITTED, "topic", "subject", "message"]
+    list_display = ["submitted_at", "who", "area_of_interest", "email", "stage_badge", "owner", "follow_up", "handled"]
+    list_filter = ["area_of_interest", *LeadAdmin.list_filter]
+    search_fields = ["name", "organisation", "email", "message"]
+    readonly_fields = [*SUBMITTED, "message"]
     inlines = [EnquiryNoteInline]
     fieldsets = [
         LeadAdmin.pipeline,
-        ("Message", {"fields": ["topic", "subject", "message"]}),
-        ("From", {"fields": [("name", "organisation"), ("role", "country"), ("email", "phone")]}),
-        ("Source", {"classes": ["collapse"], "fields": ["submitted_at", "locale", "source_page",
-                                                         ("utm_source", "utm_medium", "utm_campaign"), "consent"]}),
+        ("Enquiry", {"fields": ["area_of_interest", "message"]}),
+        ("From", {"fields": [("name", "organisation"), "country", ("email", "phone")]}),
+        SOURCE,
     ]
 
 
@@ -147,25 +150,24 @@ class AttachmentInline(BaseStackedInline):
     @admin.display(description="File")
     def download(self, obj):
         url = reverse("admin:bd_proposalrequest_attachment", args=[obj.request_id, obj.pk])
-        return format_html('<a href="{}" class="text-primary-600 font-semibold">Download</a>', url)
+        return format_html('<a href="{}" class="ap-link">Download</a>', url)
 
 
 @admin.register(ProposalRequest)
 class ProposalRequestAdmin(LeadAdmin):
     list_display = ["submitted_at", "who", "project_type", "sector", "budget", "stage_badge", "owner", "follow_up",
                     "handled"]
-    list_filter = ["sector", "project_stage", "budget", *LeadAdmin.list_filter]
+    list_filter = ["area_of_interest", "sector", "project_stage", "budget", *LeadAdmin.list_filter]
     search_fields = ["name", "organisation", "email", "project_type", "location", "scope"]
     readonly_fields = [*SUBMITTED, "organisation_type", "project_type", "sector", "services_list", "location",
                        "project_stage", "budget", "timeline", "scope"]
     inlines = [AttachmentInline, ProposalNoteInline]
     fieldsets = [
         LeadAdmin.pipeline,
-        ("Project", {"fields": ["project_type", ("sector", "services_list"), "location",
+        ("Project", {"fields": ["area_of_interest", "project_type", ("sector", "services_list"), "location",
                                 ("project_stage", "budget", "timeline"), "scope"]}),
         ("From", {"fields": [("name", "organisation", "organisation_type"), ("role", "country"), ("email", "phone")]}),
-        ("Source", {"classes": ["collapse"], "fields": ["submitted_at", "locale", "source_page",
-                                                         ("utm_source", "utm_medium", "utm_campaign"), "consent"]}),
+        SOURCE,
     ]
 
     def get_urls(self):

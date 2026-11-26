@@ -1,16 +1,16 @@
 'use client';
 
 import { useRef } from 'react';
-import { Icon } from '@/components/ui/Icon';
 import { useScrollTrigger } from '@/hooks/useScrollTrigger';
-import type { LifecycleStage } from '@/lib/cms/types';
+import type { ApproachStep } from '@/lib/cms/types';
+import { pillarNumber } from './pillarStyle';
 
 /**
- * Project lifecycle, Initiation → Closeout. A line draws down through the
- * stages as the section scrolls (scrubbed, so it follows the reader exactly).
- * Without the scroll layer the line is simply drawn in full.
+ * The five approach steps, Understand → Learn and improve. A line draws down
+ * through the steps as the section scrolls (scrubbed, so it follows the reader
+ * exactly). Without the scroll layer the line is simply drawn in full.
  */
-export function ApproachTimeline({ stages }: { stages: LifecycleStage[] }) {
+export function ApproachTimeline({ stages }: { stages: ApproachStep[] }) {
   const root = useRef<HTMLOListElement>(null);
 
   useScrollTrigger(
@@ -48,24 +48,13 @@ export function ApproachTimeline({ stages }: { stages: LifecycleStage[] }) {
             data-dot
             className="absolute -start-12 top-1 grid size-6 place-items-center rounded-pill bg-blue text-white ring-4 ring-canvas md:-start-20 md:size-10"
           >
-            <Icon name={stage.icon} className="size-3 md:size-5" />
+            <span className="text-[0.625rem] font-semibold tabular-nums md:text-caption">{i + 1}</span>
           </span>
           <div>
-            <p className="text-caption font-semibold text-blue tabular-nums">0{i + 1}</p>
+            <p className="text-caption font-semibold text-blue tabular-nums">{pillarNumber(i + 1)}</p>
             <h3 className="mt-1 text-h3 font-semibold">{stage.name}</h3>
           </div>
-          <div>
-            <p className="text-lead text-ink-muted">{stage.summary}</p>
-            {stage.deliverables.length > 0 && (
-              <ul className="mt-5 flex flex-wrap gap-2">
-                {stage.deliverables.map((item) => (
-                  <li key={item} className="rounded-pill bg-surface px-3 py-1 text-caption ring-1 ring-hairline ring-inset">
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+          <p className="text-lead text-ink-muted">{stage.summary}</p>
         </li>
       ))}
     </ol>

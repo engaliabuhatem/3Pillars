@@ -2,10 +2,13 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Logo } from '@/components/brand/Logo';
 import { InsightCard, ProjectCard, SectorTile, ServiceCard } from '@/components/content/Cards';
+import { ApproachTimeline } from '@/components/content/ApproachTimeline';
 import { CtaBand } from '@/components/content/CtaBand';
+import { Breadcrumbs } from '@/components/content/PageHeader';
+import { PillarFlow } from '@/components/content/PillarFlow';
+import { PillarCard, PillarSection, ValuePoints } from '@/components/content/Pillars';
+import { CapabilityCard, CaseStudyFacts } from '@/components/content/Sections';
 import { Checkbox, Select, TextArea, TextField } from '@/components/forms/Field';
-import { ApproachTimeline } from '@/components/home/ApproachTimeline';
-import { PillarsShowcase } from '@/components/home/PillarsShowcase';
 import { Accordion } from '@/components/ui/Accordion';
 import { Button, ButtonLink } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -71,8 +74,8 @@ export default async function Styleguide({ params }: PageProps<'/[locale]/_style
             <Button variant="secondary">Secondary</Button>
             <Button variant="ghost">Ghost</Button>
             <Button disabled>Disabled</Button>
-            <ButtonLink href="/request-a-proposal" locale={locale} arrow>
-              {t.common.requestProposal}
+            <ButtonLink href="/contact/request-a-consultation/" locale={locale} arrow>
+              {t.common.requestConsultation}
             </ButtonLink>
             <Tag>Neutral</Tag>
             <Tag tone="blue">Blue</Tag>
@@ -116,7 +119,7 @@ export default async function Styleguide({ params }: PageProps<'/[locale]/_style
 
           <div className="grid max-w-3xl gap-6">
             <TextField label={t.forms.name} required placeholder="—" />
-            <TextField label={t.forms.email} required error={t.forms.invalidEmail} defaultValue="name@" />
+            <TextField label={t.forms.businessEmail} required error={t.forms.invalidEmail} defaultValue="name@" />
             <TextField label={t.forms.organisation} disabled defaultValue="—" />
             <Select label={t.proposal.budget} options={Object.entries(t.proposal.budgets).map(([value, label]) => ({ value, label }))} />
             <TextArea label={t.forms.message} hint={t.proposal.scopeHint} />
@@ -124,8 +127,40 @@ export default async function Styleguide({ params }: PageProps<'/[locale]/_style
             <FormDemos />
           </div>
 
-          <PillarsShowcase pillars={f.pillars} />
-          <ApproachTimeline stages={f.stages} />
+          <div className="grid gap-4">
+            <h2 className="text-h3 font-semibold">Breadcrumb</h2>
+            <Breadcrumbs locale={locale} trail={[{ name: f.heading, path: '/services/' }, { name: f.caption, path: '/services/specimen/' }]} />
+          </div>
+
+          <div className="grid gap-4">
+            <h2 className="text-h3 font-semibold">Pillar cards</h2>
+            <ol className="grid auto-rows-fr gap-5 md:grid-cols-3">
+              {f.pillars.map((pillar) => (
+                <li key={pillar.id}>
+                  <PillarCard pillar={pillar} locale={locale} staging />
+                </li>
+              ))}
+            </ol>
+            <PillarSection pillar={f.pillars[2]!} locale={locale} staging />
+          </div>
+
+          <div className="grid gap-4">
+            <h2 className="text-h3 font-semibold">Capability cards</h2>
+            <ul className="grid auto-rows-fr gap-5 md:grid-cols-3">
+              {f.capabilities.map((item) => (
+                <li key={item.title}>
+                  <CapabilityCard title={item.title} description={item.description} />
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="grid gap-4">
+            <h2 className="text-h3 font-semibold">Case-study facts</h2>
+            <CaseStudyFacts project={f.caseStudy} locale={locale} />
+          </div>
+
+          <ApproachTimeline stages={f.steps} />
         </div>
       </Section>
       <Section tone="navy" arcs>
@@ -136,6 +171,8 @@ export default async function Styleguide({ params }: PageProps<'/[locale]/_style
             <KPICounter value={4.5} label={f.heading} />
             <KPICounter value={98} suffix="%" label={f.heading} />
           </div>
+          <ValuePoints points={f.values} locale={locale} />
+          <PillarFlow steps={[...f.pillars].reverse().map(({ number, name, color }) => ({ number, name, color }))} label={f.heading} />
           <div className="flex flex-wrap gap-3">
             <Button variant="inverse">Inverse</Button>
             <Button variant="inverse-outline">Inverse outline</Button>

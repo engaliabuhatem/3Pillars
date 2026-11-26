@@ -80,7 +80,7 @@ sudo -u "$USER_NAME" bash -c "
   .venv/bin/pip install --upgrade pip -q
   .venv/bin/pip install -r requirements.txt -q
   .venv/bin/python manage.py migrate --noinput
-  .venv/bin/python manage.py seed
+  .venv/bin/python manage.py seed_content
   .venv/bin/python manage.py collectstatic --noinput -v 0
   .venv/bin/python manage.py check --deploy --fail-level WARNING
 "

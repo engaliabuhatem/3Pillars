@@ -176,7 +176,10 @@ TURNSTILE_SECRET_KEY = env("TURNSTILE_SECRET_KEY", default="")
 # ── Revalidation webhook ─────────────────────────────────────────────────
 # Every content save tells Next.js which cache tags to drop. The body is
 # HMAC-SHA256 signed with the shared secret; Next rejects anything unsigned.
+# The site serves every address with a trailing slash; a POST to the other form would be redirected and lost.
 REVALIDATE_URL = env("REVALIDATE_URL", default="")
+if REVALIDATE_URL and not REVALIDATE_URL.endswith("/"):
+    REVALIDATE_URL += "/"
 REVALIDATE_SECRET = env("REVALIDATE_SECRET", default="")
 
 # ── Email ────────────────────────────────────────────────────────────────
@@ -221,7 +224,7 @@ REST_FRAMEWORK = {
 ADMIN_NAVIGATION = [
     group("Overview", [dashboard_item()]),
     group("Business development", [
-        item("bd.ProposalRequest", "Proposal requests", icon="request_quote"),
+        item("bd.ProposalRequest", "Consultation requests", icon="request_quote"),
         item("bd.Enquiry", "Enquiries", icon="inbox"),
         item("bd.DownloadLead", "Download leads", icon="download"),
         item("content.Client", "Clients & partners", icon="handshake"),
@@ -229,20 +232,27 @@ ADMIN_NAVIGATION = [
     group("Website — Home", [
         item("core.HomeSection", "Home sections", icon="view_agenda"),
         item("content.Pillar", "The three pillars", icon="view_column"),
+        item("content.ValuePoint", "Value points", icon="star"),
         item("content.KPI", "Key figures", icon="monitoring"),
-        item("content.LifecycleStage", "Approach stages", icon="timeline"),
         item("content.Testimonial", "Testimonials", icon="format_quote"),
+    ]),
+    group("Website — About", [
+        item("content.CompanyValue", "Values", icon="diamond"),
+        item("content.ApproachStep", "Approach steps", icon="timeline"),
+        item("content.TeamMember", "Leadership & team", icon="groups"),
     ]),
     group("Website — Content", [
         item("content.Service", "Services", icon="engineering"),
         item("content.Sector", "Sectors", icon="category"),
         item("content.Project", "Projects", icon="apartment"),
-        item("content.Insight", "Insights", icon="article"),
         item("core.Page", "Pages", icon="description"),
-        item("content.TeamMember", "Team", icon="groups"),
         item("content.Office", "Offices", icon="location_on"),
         item("content.Certification", "Certifications", icon="verified"),
         item("content.Download", "Downloads", icon="picture_as_pdf"),
+    ]),
+    group("Website — Insights", [
+        item("content.Insight", "Insights", icon="article"),
+        item("content.InsightCategory", "Categories", icon="label"),
     ]),
     group("Careers", [
         item("careers.Job", "Jobs", icon="work"),
@@ -250,7 +260,9 @@ ADMIN_NAVIGATION = [
     ]),
     group("Configuration", [
         item("core.SiteSettings", "Site settings", icon="tune"),
+        item("core.LaunchReadiness", "Launch readiness", icon="rocket_launch"),
         item("core.NavItem", "Navigation", icon="menu"),
+        item("core.FooterColumn", "Footer columns", icon="view_week"),
         item("core.Redirect", "Redirects", icon="alt_route"),
         item("auth.User", "Staff users", icon="person"),
         item("auth.Group", "Roles", icon="admin_panel_settings"),
@@ -263,13 +275,15 @@ UNFOLD = build_unfold(
     subheader="Content & business development",
     # CI blue carries white text at 6.5:1, so it can drive Unfold's primary ramp.
     brand="#0B5EAC",
-    # Cool canvas: the admin greys lean toward navy, like the site's hairlines.
-    neutral="#F7F8FA",
+    neutral="#F5F5F7",
     navigation=ADMIN_NAVIGATION,
     dashboard_callback="apps.content.dashboard.dashboard_callback",
     site_url=SITE_URL,
     site_symbol="view_column",
-    extra_styles=["css/admin-brand.css"],
+    # admin-brand.css: adminkit variables. admin-apple.css: the Unfold chrome
+    # (type, surfaces, controls) restyled to Apple's Human Interface Guidelines.
+    extra_styles=["css/admin-brand.css", "css/admin-apple.css"],
+    border_radius="10px",
     login_image="brand/login.svg",
     SITE_ICON=lambda request: static("brand/logo-mark.svg"),
     SITE_LOGO=lambda request: static("brand/logo-mark.svg"),
@@ -280,3 +294,29 @@ UNFOLD = build_unfold(
         "href": lambda request: static("brand/logo-mark.svg"),
     }],
 )
+
+# Apple's system greys, light (50–400) through dark (700–950), replacing the
+# generated navy-tinted ramp so surfaces and hairlines read like macOS/iOS.
+UNFOLD["COLORS"]["base"] = {
+    "50": "#F5F5F7",   # window background
+    "100": "#EFEFF2",
+    "200": "#E5E5EA",  # systemGray5 — hairlines
+    "300": "#D1D1D6",  # systemGray4
+    "400": "#AEAEB2",  # systemGray2
+    "500": "#8E8E93",  # systemGray
+    "600": "#636366",
+    "700": "#48484A",
+    "800": "#3A3A3C",  # dark separators
+    "900": "#1C1C1E",  # dark window background
+    "950": "#111112",
+}
+# Label colours. Secondary text is darker than systemGray so it keeps 4.5:1 on
+# white (systemGray is 3.3:1).
+UNFOLD["COLORS"]["font"] = {
+    "subtle-light": "#6E6E73",
+    "subtle-dark": "#98989D",
+    "default-light": "#3A3A3C",
+    "default-dark": "#E5E5EA",
+    "important-light": "#1D1D1F",
+    "important-dark": "#F5F5F7",
+}

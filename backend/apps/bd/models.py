@@ -24,6 +24,16 @@ class Stage(models.TextChoices):
 OPEN_STAGES = (Stage.NEW, Stage.QUALIFIED, Stage.PROPOSAL_SENT)
 
 
+class AreaOfInterest(models.TextChoices):
+    """Also names the Site settings recipient list each enquiry is routed to."""
+
+    PROJECT_MANAGEMENT = "project_management", "Project Management"
+    PMO_CONTROLS = "pmo_controls", "PMO & Controls"
+    BUSINESS_DEVELOPMENT = "business_development", "Business Development"
+    STRATEGIC_ADVISORY = "strategic_advisory", "Strategic Advisory"
+    OTHER = "other", "Other"
+
+
 class LeadQuerySet(models.QuerySet):
     def overdue(self):
         return self.filter(next_follow_up__lt=timezone.localdate(), stage__in=OPEN_STAGES)
@@ -37,7 +47,8 @@ class Lead(models.Model):
     role = models.CharField("Job title", max_length=120, blank=True)
     email = models.EmailField()
     phone = models.CharField(max_length=40, blank=True)
-    country = models.CharField(max_length=80, blank=True)
+    country = models.CharField("Country / location", max_length=80, blank=True)
+    area_of_interest = models.CharField(max_length=24, choices=AreaOfInterest.choices, blank=True, db_index=True)
 
     locale = models.CharField(max_length=2, default="en", choices=[("en", "English"), ("ar", "Arabic")])
     source_page = models.CharField(max_length=300, blank=True)
@@ -45,6 +56,9 @@ class Lead(models.Model):
     utm_medium = models.CharField(max_length=120, blank=True)
     utm_campaign = models.CharField(max_length=120, blank=True)
     consent = models.BooleanField(default=False)
+    consent_text = models.TextField("Consent wording agreed to", blank=True)
+    consent_version = models.PositiveIntegerField(null=True, blank=True)
+    consent_at = models.DateTimeField("Consent given at", null=True, blank=True)
     submitted_at = models.DateTimeField(default=timezone.now, db_index=True)
 
     stage = models.CharField(max_length=16, choices=Stage.choices, default=Stage.NEW, db_index=True)
@@ -67,22 +81,15 @@ class Lead(models.Model):
 
 
 class Enquiry(Lead):
-    class Topic(models.TextChoices):
-        GENERAL = "general", "General enquiry"
-        CONSULTATION = "consultation", "Book a consultation"
-        PARTNERSHIP = "partnership", "Partnership"
-        MEDIA = "media", "Media"
-
-    topic = models.CharField(max_length=16, choices=Topic.choices, default=Topic.GENERAL)
-    subject = models.CharField(max_length=200, blank=True)
-    message = models.TextField()
+    message = models.TextField("Project or enquiry summary")
 
     class Meta(Lead.Meta):
         verbose_name = "enquiry"
         verbose_name_plural = "enquiries"
 
     def __str__(self) -> str:
-        return f"{self.get_topic_display()}: {self.who}"
+        area = self.get_area_of_interest_display() or "Enquiry"
+        return f"{area}: {self.who}"
 
 
 class ProposalRequest(Lead):
@@ -119,7 +126,7 @@ class ProposalRequest(Lead):
     scope = models.TextField("Scope description")
 
     class Meta(Lead.Meta):
-        verbose_name = "proposal request"
+        verbose_name = "consultation request"
 
     def __str__(self) -> str:
         return f"{self.project_type}: {self.who}"

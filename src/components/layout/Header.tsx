@@ -9,7 +9,7 @@ import { buttonClass } from '@/components/ui/Button';
 import { SmartLink } from '@/components/ui/SmartLink';
 import { useDictionary, useLocale } from '@/i18n/LocaleProvider';
 import type { Navigation, NavItem } from '@/lib/cms/types';
-import { cn, localize } from '@/lib/utils';
+import { cn, isActivePath, localize } from '@/lib/utils';
 import { LanguageSwitch } from './LanguageSwitch';
 import { MegaMenu } from './MegaMenu';
 
@@ -21,12 +21,13 @@ import { MegaMenu } from './MegaMenu';
 export function Header({
   navigation,
   shortName,
-  ctaLabel,
+  cta,
   homeStartsDark,
 }: {
   navigation: Navigation;
   shortName: string;
-  ctaLabel: string;
+  /** The call-to-action button (Request a Consultation). */
+  cta: { label: string; href: string };
   /** The home page opens on the navy video hero, so the bar starts in its inverse look there. */
   homeStartsDark: boolean;
 }) {
@@ -64,9 +65,9 @@ export function Header({
     document.documentElement.style.overflow = mobileOpen ? 'hidden' : '';
   }, [mobileOpen]);
 
-  const overDark = homeStartsDark && pathname === `/${locale}`;
+  const overDark = homeStartsDark && isActivePath(pathname, `/${locale}`);
   const dark = overDark && !scrolled && !mobileOpen;
-  const isCurrent = (item: NavItem) => pathname.startsWith(localize(item.link, locale));
+  const isCurrent = (item: NavItem) => isActivePath(pathname, localize(item.link, locale));
 
   return (
     <header
@@ -79,7 +80,7 @@ export function Header({
       data-surface={dark ? 'navy' : undefined}
     >
       <div className="container-wide flex h-(--spacing-nav) items-center gap-6">
-        <Link href={`/${locale}`} className="-ms-1 flex min-h-11 items-center gap-3 rounded-md p-1">
+        <Link href={`/${locale}/`} className="-ms-1 flex min-h-11 items-center gap-3 rounded-md p-1">
           <span data-intro-logo>
             <Logo variant="mark" tone={dark ? 'white' : 'color'} className="h-9 w-auto" title="" />
           </span>
@@ -126,12 +127,12 @@ export function Header({
             <LanguageSwitch className={dark ? 'hover:bg-white/10' : 'hover:bg-navy-50'} />
           </Suspense>
           <SmartLink
-            href="/request-a-proposal"
+            href={cta.href}
             locale={locale}
-            data-track="cta_header_proposal"
+            data-track="cta_header_consultation"
             className={buttonClass(dark ? 'inverse' : 'primary', 'md', 'max-sm:hidden')}
           >
-            {ctaLabel}
+            {cta.label}
           </SmartLink>
           <button
             type="button"
@@ -168,8 +169,8 @@ export function Header({
               </li>
             ))}
             <li className="pt-8">
-              <SmartLink href="/request-a-proposal" locale={locale} className={buttonClass('primary', 'lg', 'w-full')}>
-                {ctaLabel}
+              <SmartLink href={cta.href} locale={locale} className={buttonClass('primary', 'lg', 'w-full')}>
+                {cta.label}
               </SmartLink>
             </li>
           </ul>

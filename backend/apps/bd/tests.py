@@ -22,13 +22,15 @@ from .models import Enquiry, ProposalRequest, Stage
 TMP = tempfile.mkdtemp()
 PDF = b"%PDF-1.7\n%test\n"
 
-ENQUIRY = {"name": "Sara", "email": "sara@example.com", "message": "We need a PMC for a hospital.", "consent": True,
-           "locale": "ar", "sourcePage": "/ar/contact"}
+ENQUIRY = {"name": "Sara", "organisation": "Ministry of Works", "email": "sara@example.com", "country": "Jordan",
+           "areaOfInterest": "pmo_controls", "message": "We want to set up a PMO for a road programme.",
+           "consent": True, "locale": "ar", "sourcePage": "/ar/contact/"}
 
-PROPOSAL = {
+CONSULTATION = {
     "name": "Omar", "email": "omar@example.com", "organisation": "Port Authority", "projectType": "Terminal expansion",
-    "location": "Aden", "projectStage": "feasibility", "budget": "10-50m", "timeline": "3m",
-    "scope": "Project management consultancy for a two-phase container terminal expansion.", "consent": "true",
+    "areaOfInterest": "project_management", "location": "Aden", "projectStage": "feasibility", "budget": "10-50m",
+    "timeline": "3m", "scope": "Programme management support for a two-phase container terminal expansion.",
+    "consent": "true",
 }
 
 
@@ -44,6 +46,8 @@ class FormTests(TestCase):
         self.api = APIClient()
         settings = SiteSettings.load()
         settings.notification_emails = "bd@3pillars.test\nnot-an-email"
+        settings.consent_text = "I agree to be contacted about my enquiry."
+        settings.consent_text_ar = "أوافق على التواصل معي بشأن استفساري."
         settings.save()
 
     def test_enquiry_saved_and_both_emails_sent(self):
@@ -51,9 +55,47 @@ class FormTests(TestCase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.json(), {"ok": True})
         enquiry = Enquiry.objects.get()
-        self.assertEqual((enquiry.locale, enquiry.source_page, enquiry.stage), ("ar", "/ar/contact", Stage.NEW))
+        self.assertEqual((enquiry.locale, enquiry.source_page, enquiry.stage), ("ar", "/ar/contact/", Stage.NEW))
         self.assertEqual([m.to for m in mail.outbox], [["bd@3pillars.test"], ["sara@example.com"]])
         self.assertIn("شكراً", mail.outbox[1].body)
+
+    def test_contact_fields_required(self):
+        for field in ("organisation", "country", "areaOfInterest"):
+            with self.subTest(field=field):
+                data = {k: v for k, v in ENQUIRY.items() if k != field}
+                response = self.api.post("/api/enquiries/", data, format="json")
+                self.assertEqual(response.status_code, 400)
+                self.assertIn(field, response.json())
+
+    def test_consent_wording_version_and_time_stored(self):
+        self.api.post("/api/enquiries/", ENQUIRY, format="json")
+        enquiry = Enquiry.objects.get()
+        self.assertEqual(enquiry.consent_text, "أوافق على التواصل معي بشأن استفساري.")
+        self.assertEqual(enquiry.consent_version, SiteSettings.load().consent_version)
+        self.assertIsNotNone(enquiry.consent_at)
+
+    def test_consent_version_moves_only_when_wording_changes(self):
+        site = SiteSettings.load()
+        before = site.consent_version
+        site.consent_text = "New wording."
+        site.save()
+        site.save()
+        self.assertEqual(SiteSettings.load().consent_version, before + 1)
+
+    def test_area_of_interest_routes_to_its_own_list(self):
+        site = SiteSettings.load()
+        site.recipients_pmo_controls = "pmo@3pillars.test"
+        site.save()
+        self.api.post("/api/enquiries/", ENQUIRY, format="json")
+        self.api.post("/api/enquiries/", {**ENQUIRY, "areaOfInterest": "other"}, format="json")
+        staff = [m.to for m in mail.outbox if m.to[0].endswith("3pillars.test")]
+        self.assertEqual(staff, [["pmo@3pillars.test"], ["bd@3pillars.test"]])
+
+    def test_consultation_requires_area_of_interest(self):
+        data = {k: v for k, v in CONSULTATION.items() if k != "areaOfInterest"}
+        response = self.api.post("/api/consultation-requests/", data, format="multipart")
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("areaOfInterest", response.json())
 
     def test_consent_required(self):
         response = self.api.post("/api/enquiries/", {**ENQUIRY, "consent": False}, format="json")
@@ -82,7 +124,7 @@ class FormTests(TestCase):
 
     def test_proposal_with_private_attachment(self):
         files = {"attachments": SimpleUploadedFile("brief.pdf", PDF, content_type="application/pdf")}
-        response = self.api.post("/api/proposal-requests/", {**PROPOSAL, **files}, format="multipart")
+        response = self.api.post("/api/consultation-requests/", {**CONSULTATION, **files}, format="multipart")
         self.assertEqual(response.status_code, 201, response.content)
         attachment = ProposalRequest.objects.get().attachments.get()
         self.assertEqual(attachment.original_name, "brief.pdf")
@@ -92,12 +134,12 @@ class FormTests(TestCase):
 
     def test_attachment_contents_are_sniffed(self):
         fake = SimpleUploadedFile("brief.pdf", b"MZ\x90\x00 not a pdf", content_type="application/pdf")
-        response = self.api.post("/api/proposal-requests/", {**PROPOSAL, "attachments": fake}, format="multipart")
+        response = self.api.post("/api/consultation-requests/", {**CONSULTATION, "attachments": fake}, format="multipart")
         self.assertEqual(response.status_code, 400)
         self.assertFalse(ProposalRequest.objects.exists())
 
     def test_short_scope_rejected(self):
-        response = self.api.post("/api/proposal-requests/", {**PROPOSAL, "scope": "help"}, format="multipart")
+        response = self.api.post("/api/consultation-requests/", {**CONSULTATION, "scope": "help"}, format="multipart")
         self.assertEqual(response.status_code, 400)
         self.assertIn("scope", response.json())
 
@@ -138,8 +180,9 @@ class DashboardTests(TestCase):
         ProposalRequest.objects.create(**common, stage=Stage.WON, next_follow_up=past)
         Enquiry.objects.create(name="a", email="a@example.com", message="m")
         Enquiry.objects.create(name="b", email="b@example.com", message="m", is_handled=True)
-        Project.objects.create(title="With image", summary="s", image="projects/a.png", image_alt="a")
-        Project.objects.create(title="Without", summary="s")
+        common_project = {"summary": "s", "delivery_entity": "Delivery Co", "our_role": "advisor"}
+        Project.objects.create(title="With image", image="projects/a.png", image_alt="a", **common_project)
+        Project.objects.create(title="Without", attribution_approved=True, **common_project)
 
     def test_counts_match_changelists(self):
         request = self.client.get("/admin/").wsgi_request
@@ -159,6 +202,7 @@ class DashboardTests(TestCase):
 
     def test_overdue_excludes_closed_stages(self):
         cards = {c["label"]: c for c in dashboard_callback(self.client.get("/admin/").wsgi_request, {})["ak_attention"]}
-        self.assertEqual(cards["Proposals past follow-up"]["value"], 1)
+        self.assertEqual(cards["Consultation requests past follow-up"]["value"], 1)
+        self.assertEqual(cards["Projects blocked on attribution"]["value"], 1)
         self.assertEqual(cards["Unhandled enquiries"]["value"], 1)
         self.assertEqual(cards["Project images missing a description"]["value"], 1)

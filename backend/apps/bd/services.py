@@ -61,19 +61,19 @@ def verify_turnstile(token: str, ip: str) -> bool:
 AUTO_REPLY = {
     "en": (
         "We have received your message",
-        "Dear {name},\n\nThank you for contacting {company}. We have received your {what} "
-        "and a member of our team will reply within two working days.\n\nKind regards,\n{company}",
+        "Dear {name},\n\nThank you for contacting {company}. We have received your {what}. Our team will "
+        "review your enquiry and direct it to the appropriate contact.\n\nKind regards,\n{company}",
     ),
     "ar": (
         "تم استلام رسالتكم",
-        "السيد/السيدة {name}،\n\nشكراً لتواصلكم مع {company}. لقد استلمنا {what} وسيتواصل معكم "
-        "أحد أعضاء فريقنا خلال يومي عمل.\n\nمع خالص التحية،\n{company}",
+        "السيد/السيدة {name}،\n\nشكراً لتواصلكم مع {company}. لقد استلمنا {what}، وسيراجعه فريقنا "
+        "ويحيله إلى الجهة المختصة.\n\nمع خالص التحية،\n{company}",
     ),
 }
 
 WHAT = {
     "enquiry": {"en": "enquiry", "ar": "استفساركم"},
-    "proposal": {"en": "proposal request", "ar": "طلب العرض"},
+    "consultation": {"en": "consultation request", "ar": "طلب الاستشارة"},
     "application": {"en": "application", "ar": "طلب التوظيف"},
 }
 
@@ -81,7 +81,8 @@ WHAT = {
 def notify(kind: str, record, *, admin_path: str, summary: str) -> None:
     """Email staff, then send the sender a short acknowledgement in their language."""
     site = SiteSettings.load()
-    recipients = site.notification_list
+    area = getattr(record, "area_of_interest", "")
+    recipients = site.recipients_for(area) if area else site.notification_list
     try:
         if recipients:
             send_mail(

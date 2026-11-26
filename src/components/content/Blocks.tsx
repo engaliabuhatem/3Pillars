@@ -8,8 +8,9 @@ import { RichText } from '@/components/ui/RichText';
 import { Section } from '@/components/ui/Section';
 import { Reveal } from '@/components/motion/Reveal';
 import type { Locale } from '@/i18n/config';
-import type { PageBlock } from '@/lib/cms/types';
+import type { ApproachStep, CompanyValue, PageBlock } from '@/lib/cms/types';
 import { cn } from '@/lib/utils';
+import { ApproachTimeline } from './ApproachTimeline';
 import { CtaBand } from './CtaBand';
 
 function BlockTitle({ block }: { block: PageBlock }) {
@@ -86,6 +87,37 @@ function Block({ block, locale }: { block: PageBlock; locale: Locale }) {
           <Accordion name={`faq-${block.id}`} items={block.items.map((item) => ({ question: item.label, answer: item.text }))} />
         </div>
       );
+    case 'values': {
+      const values = block.entries as CompanyValue[];
+      return (
+        <>
+          <BlockTitle block={block} />
+          <dl className="grid gap-x-10 gap-y-8 md:grid-cols-2 lg:grid-cols-3">
+            {values.map((value, i) => (
+              <Reveal key={value.id} index={i % 3} className="border-t border-hairline pt-6 on-navy:border-hairline-inverse">
+                <dt className="text-h3 font-semibold">{value.value}</dt>
+                <dd className="mt-3 text-ink-muted on-navy:text-ink-inverse-muted">{value.inPractice}</dd>
+              </Reveal>
+            ))}
+          </dl>
+        </>
+      );
+    }
+    case 'approach_steps':
+      return (
+        <>
+          <BlockTitle block={block} />
+          {block.body && <RichText html={block.body} className="mb-14 text-lead" />}
+          <ApproachTimeline stages={block.entries as ApproachStep[]} />
+        </>
+      );
+    case 'affiliation':
+      return block.body ? (
+        <>
+          <BlockTitle block={block} />
+          <RichText html={block.body} />
+        </>
+      ) : null;
     case 'cta':
       return null;
   }
@@ -105,9 +137,13 @@ function StatValue({ value, label, source }: { value: string; label: string; sou
   );
 }
 
+/** Blocks with nothing to show (an empty affiliation statement, a list with no entries) are skipped. */
+const isEmpty = (block: PageBlock) =>
+  (block.kind === 'affiliation' && !block.body) || ((block.kind === 'values' || block.kind === 'approach_steps') && block.entries.length === 0 && !block.body);
+
 /** Renders a CMS page's ordered blocks, alternating canvas/white unless a block asks for navy. */
 export function Blocks({ blocks, locale }: { blocks: PageBlock[]; locale: Locale }) {
-  return blocks.map((block, i) =>
+  return blocks.filter((block) => !isEmpty(block)).map((block, i) =>
     block.kind === 'cta' ? (
       <CtaBand
         key={block.id}

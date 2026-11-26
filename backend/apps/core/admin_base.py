@@ -16,6 +16,7 @@ from unfold.contrib.forms.widgets import WysiwygWidget
 from .fields import RichTextField
 from .images import image_payload
 from .models import ApprovalStatus
+from .seo import MISSING_SEO, seo_duplicates
 
 APPROVE_PERMISSION = "core.approve_content"
 
@@ -25,6 +26,48 @@ def tab(title: str, *fields, description: str = "") -> tuple:
     if description:
         options["description"] = description
     return (title, options)
+
+
+# Every content form uses the same tabs, in the same order:
+#   Content (English | Arabic side by side) → Facts/Details → Media → SEO → Publishing
+# Side by side lets an editor see at a glance which translations are missing.
+
+def seo_tab() -> tuple:
+    """Keyword guidance first, then the fields it should shape. Counters come from js/seo-counter.js."""
+    return tab("SEO", "primary_keyword", "supporting_keywords", ("seo_title", "seo_title_ar"),
+               ("meta_description", "meta_description_ar"), ("h1", "h1_ar"), "seo_check", "og_image",
+               description="Keywords are guidance for writing the title, description and heading. They are never "
+                           "published as a tag. Aim for a title of 60 characters or fewer and a description of 160 "
+                           "or fewer, each unique across the site.")
+
+
+class MissingSeoFilter(admin.SimpleListFilter):
+    title = "SEO"
+    parameter_name = "seo"
+
+    def lookups(self, request, model_admin):
+        return [("missing", "Missing SEO title, description or heading")]
+
+    def queryset(self, request, queryset):
+        if self.value() == "missing":
+            return queryset.filter(MISSING_SEO)
+        return queryset
+
+
+def media_tab(field: str = "image", title: str = "Media", description: str = "") -> tuple:
+    return tab(title, f"{field}_preview", field, (f"{field}_alt", f"{field}_alt_ar"), description=description)
+
+
+def publishing_tab(*extra):
+    """Approval plus any "where it appears" switches (featured, leadership…)."""
+    return tab("Publishing", "approval", "ar_reviewed", *extra,
+               description="Only approved items appear on the live site. Only Approvers can change the status. "
+                           "An Arabic page is offered to search engines only once its Arabic is reviewed.")
+
+
+def badge(label: str, tone: str):
+    """A tinted status pill; tones are defined in static/css/admin-apple.css."""
+    return format_html('<span class="ap-badge ap-badge--{}">{}</span>', tone, label)
 
 
 class BilingualFormMixin:
@@ -63,12 +106,9 @@ class PreviewMixin:
 def render_thumbnail(obj, field: str, size: int = 160):
     payload = image_payload(obj, field) if obj and obj.pk else None
     if not payload:
-        return format_html('<span class="text-base-400">No image yet</span>')
-    return format_html(
-        '<img src="{}" alt="" style="max-height:{}px;max-width:{}px;object-fit:cover;border-radius:10px;'
-        'border:1px solid rgb(25 23 71 / .1)">',
-        payload["src"], size * 3 // 4, size * 3 // 2,
-    )
+        return format_html('<span class="ap-muted">No image yet</span>')
+    return format_html('<img src="{}" alt="" class="ap-thumb" style="max-height:{}px;max-width:{}px">',
+                       payload["src"], size * 3 // 4, size * 3 // 2)
 
 
 class BaseAdmin(BilingualFormMixin, PreviewMixin, ModelAdmin):
@@ -92,14 +132,24 @@ class BaseStackedInline(BilingualFormMixin, PreviewMixin, StackedInline):
 # ── Approval ─────────────────────────────────────────────────────────────
 
 
+def approval_fields(obj) -> list[str]:
+    return ["approval", "updated_at"] if hasattr(obj, "updated_at") else ["approval"]
+
+
 @admin.action(description="Approve for publication", permissions=["approve"])
 def approve(modeladmin, request, queryset):
-    count = 0
+    count, blocked = 0, []
     for obj in queryset:
+        if reason := obj.approval_blocker():
+            blocked.append(f"“{obj}”: {reason}")
+            continue
         obj.approval = ApprovalStatus.APPROVED
-        obj.save(update_fields=["approval", "updated_at"])
+        obj.save(update_fields=approval_fields(obj))
         count += 1
-    modeladmin.message_user(request, f"{count} item(s) approved and live within seconds.", messages.SUCCESS)
+    if count:
+        modeladmin.message_user(request, f"{count} item(s) approved and live within seconds.", messages.SUCCESS)
+    for line in blocked:
+        modeladmin.message_user(request, f"Not approved — {line}", messages.ERROR)
 
 
 @admin.action(description="Unpublish (back to awaiting approval)", permissions=["approve"])
@@ -107,7 +157,7 @@ def unpublish(modeladmin, request, queryset):
     count = 0
     for obj in queryset:
         obj.approval = ApprovalStatus.PENDING
-        obj.save(update_fields=["approval", "updated_at"])
+        obj.save(update_fields=approval_fields(obj))
         count += 1
     modeladmin.message_user(request, f"{count} item(s) taken off the live site.", messages.WARNING)
 
@@ -125,6 +175,9 @@ class PublishableAdmin(BaseAdmin):
     ordering_field = "order"
     hide_ordering_field = True
 
+    class Media:
+        js = ["js/seo-counter.js"]
+
     def has_approve_permission(self, request):
         return request.user.has_perm(APPROVE_PERMISSION)
 
@@ -132,28 +185,32 @@ class PublishableAdmin(BaseAdmin):
         fields = list(super().get_readonly_fields(request, obj))
         if not self.has_approve_permission(request):
             fields.append("approval")
+        if hasattr(self.model, "meta_description"):
+            fields.append("seo_check")
         return fields
+
+    @admin.display(description="Duplicates")
+    def seo_check(self, obj):
+        clashes = seo_duplicates(obj) if obj and obj.pk else []
+        if not clashes:
+            return format_html('<span class="ap-muted">No other page uses this title or description.</span>')
+        return format_html('<span class="ap-overdue">{}</span>', "; ".join(clashes))
 
     def get_list_filter(self, request):
         return ["approval", *super().get_list_filter(request)]
 
     @admin.display(description="Status", ordering="approval")
     def status_badge(self, obj):
-        live = obj.approval == ApprovalStatus.APPROVED
-        return format_html(
-            '<span style="display:inline-block;padding:2px 10px;border-radius:999px;font-size:11px;'
-            'font-weight:600;background:{};color:{}">{}</span>',
-            "#F0FAF2" if live else "#FFF8EB",
-            "#044B22" if live else "#8A5300",
-            "Live" if live else "Awaiting approval",
-        )
+        if obj.approval == ApprovalStatus.APPROVED:
+            return badge("Live", "green")
+        return badge("Awaiting approval", "orange")
 
     @admin.display(description="On site")
     def site_link(self, obj):
         if not hasattr(obj, "get_absolute_url") or not obj.public_path:
             return "—"
         label = "View" if obj.is_approved else "Preview"
-        return format_html('<a href="{}" target="_blank" rel="noopener" class="text-primary-600">{} ↗</a>',
+        return format_html('<a href="{}" target="_blank" rel="noopener" class="ap-link">{} ↗</a>',
                            obj.get_absolute_url(), label)
 
 
@@ -193,5 +250,5 @@ class PrivateFileAdminMixin:
             return "—"
         meta = self.model._meta
         url = reverse(f"admin:{meta.app_label}_{meta.model_name}_file", args=[obj.pk, field])
-        return format_html('<a href="{}" class="text-primary-600 font-semibold">{}</a>', url, label)
+        return format_html('<a href="{}" class="ap-link">{}</a>', url, label)
 

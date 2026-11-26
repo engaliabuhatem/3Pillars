@@ -5,12 +5,12 @@ import { EmptyState } from '@/components/ui/Feedback';
 import { Section } from '@/components/ui/Section';
 import { getDictionary } from '@/i18n/dictionaries';
 import { getDownloads, getSettings } from '@/lib/cms';
-import { pageCopy, pageMetadata, resolveLocale } from '@/lib/page';
+import { heading, pageCopy, pageMetadata, resolveLocale } from '@/lib/page';
 
 type Props = PageProps<'/[locale]/capability-statement'>;
 
 export const generateMetadata = ({ params }: Props) =>
-  pageMetadata(params, 'capability-statement', '/capability-statement', (l) => getDictionary(l).common.capability);
+  pageMetadata(params, 'capability-statement', '/capability-statement/', (l) => getDictionary(l).common.capability);
 
 export default async function CapabilityStatementPage({ params }: Props) {
   const locale = await resolveLocale(params);
@@ -24,7 +24,7 @@ export default async function CapabilityStatementPage({ params }: Props) {
 
   return (
     <>
-      <PageHeader locale={locale} trail={[{ name: page.title, path: '/capability-statement' }]} eyebrow={page.eyebrow} title={page.title} intro={page.intro} gate={page} />
+      <PageHeader locale={locale} trail={[{ name: page.title, path: '/capability-statement/' }]} eyebrow={page.eyebrow} title={heading(page)} intro={page.intro} gate={page} />
       <Section tone="surface" tight>
         <div className="container-wide">
           {doc ? (

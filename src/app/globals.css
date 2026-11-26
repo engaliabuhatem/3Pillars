@@ -139,18 +139,19 @@
 @utility hero-scrim {
   --scrim-1: color-mix(in srgb, var(--color-navy) 92%, transparent);
   --scrim-2: color-mix(in srgb, var(--color-navy) 80%, transparent);
-  --scrim-3: color-mix(in srgb, var(--color-navy) 64%, transparent);
-  --scrim-4: color-mix(in srgb, var(--color-navy) 20%, transparent);
+  /* The page heading line sits above the display headline, so the scrim stays dark higher up. */
+  --scrim-3: color-mix(in srgb, var(--color-navy) 72%, transparent);
+  --scrim-4: color-mix(in srgb, var(--color-navy) 45%, transparent);
   --scrim-side: color-mix(in srgb, var(--color-navy) 45%, transparent);
-  background: linear-gradient(to top, var(--scrim-1) 0%, var(--scrim-2) 45%, var(--scrim-3) 74%, var(--scrim-4) 100%);
+  background: linear-gradient(to top, var(--scrim-1) 0%, var(--scrim-2) 45%, var(--scrim-3) 85%, var(--scrim-4) 100%);
   @media (width >= 48rem) {
     background:
       linear-gradient(to right, var(--scrim-side), transparent 65%),
-      linear-gradient(to top, var(--scrim-1) 0%, var(--scrim-2) 45%, var(--scrim-3) 74%, var(--scrim-4) 100%);
+      linear-gradient(to top, var(--scrim-1) 0%, var(--scrim-2) 45%, var(--scrim-3) 85%, var(--scrim-4) 100%);
     [dir='rtl'] & {
       background:
         linear-gradient(to left, var(--scrim-side), transparent 65%),
-        linear-gradient(to top, var(--scrim-1) 0%, var(--scrim-2) 45%, var(--scrim-3) 74%, var(--scrim-4) 100%);
+        linear-gradient(to top, var(--scrim-1) 0%, var(--scrim-2) 45%, var(--scrim-3) 85%, var(--scrim-4) 100%);
     }
   }
 }

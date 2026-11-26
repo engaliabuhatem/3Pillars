@@ -1,12 +1,17 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { DEFAULT_LOCALE, LOCALES, isLocale, type Locale } from '@/i18n/config';
+import { withSlash } from '@/lib/utils';
 
 /*
  * Runs before every page request, in this order:
  *   1. ?preview=<token> turns the private preview on (or off) for this browser.
- *   2. No locale in the path → redirect to the visitor's language.
- *   3. A CMS Redirect matches the path → 301/302 to its target.
- *   4. The coming-soon switch is on and this is not a preview → coming-soon page.
+ *   2. The other form of the site address (www / no www) → the preferred one.
+ *   3. No locale in the path → redirect to the visitor's language.
+ *   4. A CMS Redirect matches the path → permanent or temporary redirect to its target.
+ *   5. The coming-soon switch is on and this is not a preview → coming-soon page.
+ *
+ * Trailing slashes are already settled before this runs (next.config
+ * `trailingSlash`), so every path here ends in one.
  *
  * The switch and the redirect table are read from the CMS and cached in this
  * process for a few seconds, so an editor's change lands almost at once
@@ -24,7 +29,12 @@ interface Cached<T> {
   at: number;
 }
 
-let comingSoonCache: Cached<boolean> | null = null;
+interface Switches {
+  comingSoon: boolean;
+  preferWww: boolean;
+}
+
+let switchCache: Cached<Switches> | null = null;
 let redirectCache: Cached<Map<string, { to: string; permanent: boolean }>> | null = null;
 
 const api = () => process.env.CMS_API_URL?.replace(/\/$/, '');
@@ -35,18 +45,36 @@ async function fetchJson<T>(path: string): Promise<T> {
   return (await response.json()) as T;
 }
 
-async function comingSoon(): Promise<boolean> {
-  const fallback = process.env.COMING_SOON === 'true';
+async function switches(): Promise<Switches> {
+  const fallback = { comingSoon: process.env.COMING_SOON === 'true', preferWww: false };
   if (!api()) return fallback;
-  if (comingSoonCache && Date.now() - comingSoonCache.at < SWITCH_TTL_MS) return comingSoonCache.value;
+  if (switchCache && Date.now() - switchCache.at < SWITCH_TTL_MS) return switchCache.value;
   try {
-    const { comingSoon: on } = await fetchJson<{ comingSoon?: boolean }>('site-settings/');
-    comingSoonCache = { value: on === true, at: Date.now() };
+    const settings = await fetchJson<{ comingSoon?: boolean; preferWww?: boolean }>('site-settings/');
+    switchCache = { value: { comingSoon: settings.comingSoon === true, preferWww: settings.preferWww === true }, at: Date.now() };
   } catch (error) {
-    console.error('[proxy] coming-soon switch unavailable:', error);
-    comingSoonCache = { value: comingSoonCache?.value ?? fallback, at: Date.now() };
+    console.error('[proxy] site switches unavailable:', error);
+    switchCache = { value: switchCache?.value ?? fallback, at: Date.now() };
   }
-  return comingSoonCache.value;
+  return switchCache.value;
+}
+
+/**
+ * One preferred host: the www and bare forms of the site's own domain
+ * redirect to whichever Site settings prefers. Other hosts (localhost, IPs,
+ * preview domains) are left alone.
+ */
+function preferredHost(request: NextRequest, preferWww: boolean): URL | null {
+  const site = process.env.SITE_URL ? new URL(process.env.SITE_URL).hostname.replace(/^www\./, '') : null;
+  const host = request.nextUrl.hostname;
+  if (!site || host.replace(/^www\./, '') !== site) return null;
+  const isWww = host.startsWith('www.');
+  if (isWww === preferWww) return null;
+  const target = request.nextUrl.clone();
+  target.hostname = preferWww ? `www.${site}` : site;
+  target.protocol = 'https:';
+  target.port = '';
+  return target;
 }
 
 async function redirects() {
@@ -102,10 +130,14 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
+  const { comingSoon, preferWww } = await switches();
+  const host = preferredHost(request, preferWww);
+  if (host) return NextResponse.redirect(host, 308);
+
   const [, first = '', ...rest] = url.pathname.split('/');
   if (!LOCALES.some((locale) => locale === first)) {
     const target = url.clone();
-    target.pathname = `/${preferredLocale(request)}${url.pathname === '/' ? '' : url.pathname}`;
+    target.pathname = `/${preferredLocale(request)}${url.pathname}`;
     return NextResponse.redirect(target);
   }
 
@@ -114,17 +146,16 @@ export async function proxy(request: NextRequest) {
 
   const redirect = (await redirects()).get(path);
   if (redirect) {
-    const target = redirect.to.startsWith('http') ? new URL(redirect.to) : new URL(`/${locale}${redirect.to}`, request.url);
+    const target = redirect.to.startsWith('http') ? new URL(redirect.to) : new URL(withSlash(`/${locale}${redirect.to}`), request.url);
     return NextResponse.redirect(target, redirect.permanent ? 308 : 307);
   }
 
-  const on = await comingSoon();
   if (path === '/coming-soon') {
-    return on ? NextResponse.next() : NextResponse.redirect(new URL(`/${locale}`, request.url));
+    return comingSoon ? NextResponse.next() : NextResponse.redirect(new URL(`/${locale}/`, request.url));
   }
   const previewing = Boolean(token) && request.cookies.get(PREVIEW_COOKIE)?.value === token;
-  if (on && !previewing) {
-    return NextResponse.redirect(new URL(`/${locale}/coming-soon`, request.url), 307);
+  if (comingSoon && !previewing) {
+    return NextResponse.redirect(new URL(`/${locale}/coming-soon/`, request.url), 307);
   }
   return NextResponse.next();
 }

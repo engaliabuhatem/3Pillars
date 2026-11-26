@@ -15,7 +15,9 @@ import { LOCALES, dirFor, isLocale } from '@/i18n/config';
 import { getDictionary } from '@/i18n/dictionaries';
 import { LocaleProvider } from '@/i18n/LocaleProvider';
 import { getHome, getNavigation, getOffices, getSettings } from '@/lib/cms';
-import { buildMetadata, JsonLd, organizationJsonLd } from '@/lib/seo';
+import { CONSULTATION_PATH } from '@/components/content/CtaBand';
+import type { NavItem } from '@/lib/cms/types';
+import { buildMetadata, JsonLd, organizationJsonLd, websiteJsonLd } from '@/lib/seo';
 import { sourceSans, tajawal } from '../fonts';
 import '../globals.css';
 
@@ -52,6 +54,8 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
   ]);
   const t = getDictionary(locale);
   const homeStartsDark = home.sections[0]?.kind === 'hero';
+  const ctaItem = findCta(navigation.header);
+  const cta = { label: ctaItem?.label || t.common.requestConsultation, href: ctaItem?.link || CONSULTATION_PATH };
 
   return (
     <html lang={locale} dir={dirFor(locale)} className={`${sourceSans.variable} ${tajawal.variable}`} suppressHydrationWarning>
@@ -67,7 +71,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
             >
               {t.a11y.skip}
             </a>
-            <Header navigation={navigation} shortName={settings.shortName} ctaLabel={t.common.requestProposal} homeStartsDark={homeStartsDark} />
+            <Header navigation={navigation} shortName={settings.shortName} cta={cta} homeStartsDark={homeStartsDark} />
             <main id="main" tabIndex={-1} className="outline-none">
               {children}
             </main>
@@ -83,7 +87,18 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
           </ToastProvider>
         </LocaleProvider>
         <JsonLd data={organizationJsonLd(settings, offices, locale)} />
+        <JsonLd data={websiteJsonLd(settings, locale)} />
       </body>
     </html>
   );
+}
+
+/** The header button: the navigation item marked as such in the admin (at any level). */
+function findCta(items: NavItem[]): NavItem | undefined {
+  for (const item of items) {
+    if (item.isCta) return item;
+    const child = findCta(item.children);
+    if (child) return child;
+  }
+  return undefined;
 }

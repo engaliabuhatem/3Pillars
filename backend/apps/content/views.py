@@ -6,11 +6,12 @@ from apps.core.api import GatedReadOnlyViewSet
 
 from . import serializers as s
 from .models import (
+    ApproachStep,
     Certification,
+    CompanyValue,
     Download,
     Insight,
     InsightCategory,
-    LifecycleStage,
     Office,
     Pillar,
     Project,
@@ -19,6 +20,7 @@ from .models import (
     Sector,
     Service,
     TeamMember,
+    ValuePoint,
 )
 
 
@@ -30,9 +32,10 @@ class ServiceViewSet(GatedReadOnlyViewSet):
         return s.ServiceSerializer if self.action == "retrieve" else s.ServiceCardSerializer
 
     def base_queryset(self):
-        qs = Service.objects.all()
+        qs = Service.objects.select_related("pillar")
         if self.action == "retrieve":
-            qs = qs.prefetch_related("deliverables", "steps", "faqs", "sectors", "projects__sector", "projects__client")
+            qs = qs.prefetch_related("capabilities", "bullets", "steps", "faqs", "related_sectors",
+                                     "projects__sector", "projects__client")
         return qs
 
 
@@ -46,20 +49,26 @@ class SectorViewSet(GatedReadOnlyViewSet):
     def base_queryset(self):
         qs = Sector.objects.all()
         if self.action == "retrieve":
-            qs = qs.prefetch_related("services", "projects__sector", "projects__client")
+            qs = qs.prefetch_related("list_items", "faqs", "projects__sector", "projects__client")
         return qs
 
 
 class ProjectFilter(django_filters.FilterSet):
     sector = django_filters.CharFilter(field_name="sector__slug")
     service = django_filters.CharFilter(field_name="services__slug")
+    role = django_filters.ChoiceFilter(field_name="our_role", choices=Project.Role.choices)
+    type = django_filters.CharFilter(method="filter_type")
     country = django_filters.CharFilter(field_name="country", lookup_expr="iexact")
     status = django_filters.ChoiceFilter(choices=Project.Status.choices)
     featured = django_filters.BooleanFilter()
 
     class Meta:
         model = Project
-        fields = ["sector", "service", "country", "status", "featured"]
+        fields = ["sector", "service", "role", "type", "country", "status", "featured"]
+
+    def filter_type(self, queryset, name, value):
+        """`?type=case-study` reads better in a URL than the stored value."""
+        return queryset.filter(entry_type=value.replace("-", "_"))
 
 
 class ProjectViewSet(GatedReadOnlyViewSet):
@@ -83,23 +92,27 @@ class ProjectViewSet(GatedReadOnlyViewSet):
         response = super().list(request, *args, **kwargs)
         # The filter bar needs every option that has at least one visible project.
         visible = self.get_queryset()
+        context = self.get_serializer_context()
         response.data["facets"] = {
-            "countries": sorted({c for c in visible.values_list("country", flat=True) if c}),
             "sectors": s.SectorRefSerializer(
                 Sector.objects.filter(projects__in=visible).distinct().visible(include_pending=self.include_pending),
-                many=True, context=self.get_serializer_context(),
+                many=True, context=context,
             ).data,
             "services": s.ServiceRefSerializer(
                 Service.objects.filter(projects__in=visible).distinct().visible(include_pending=self.include_pending),
-                many=True, context=self.get_serializer_context(),
+                many=True, context=context,
             ).data,
+            "roles": [{"value": v, "label": label} for v, label in Project.Role.choices
+                      if visible.filter(our_role=v).exists()],
+            "types": [{"value": v.replace("_", "-"), "label": label} for v, label in Project.EntryType.choices
+                      if visible.filter(entry_type=v).exists()],
         }
         return response
 
 
 class InsightViewSet(GatedReadOnlyViewSet):
     model = Insight
-    filterset_fields = {"category__slug": ["exact"]}
+    filterset_fields = {"category__slug": ["exact"], "kind": ["exact"]}
 
     def get_serializer_class(self):
         return s.InsightSerializer if self.action == "retrieve" else s.InsightCardSerializer
@@ -109,9 +122,11 @@ class InsightViewSet(GatedReadOnlyViewSet):
 
     def list(self, request, *args, **kwargs):
         response = super().list(request, *args, **kwargs)
+        context = self.get_serializer_context()
         response.data["categories"] = s.InsightCategorySerializer(
-            InsightCategory.objects.all(), many=True, context=self.get_serializer_context()
+            InsightCategory.objects.all(), many=True, context=context
         ).data
+        response.data["kinds"] = [{"value": v, "label": label} for v, label in Insight.Kind.choices]
         return response
 
 
@@ -152,9 +167,26 @@ class PillarViewSet(GatedReadOnlyViewSet):
     pagination_class = None
     lookup_field = "pk"
 
+    def base_queryset(self):
+        return Pillar.objects.select_related("service").order_by("number")
 
-class LifecycleStageViewSet(GatedReadOnlyViewSet):
-    model = LifecycleStage
-    serializer_class = s.LifecycleStageSerializer
+
+class ApproachStepViewSet(GatedReadOnlyViewSet):
+    model = ApproachStep
+    serializer_class = s.ApproachStepSerializer
+    pagination_class = None
+    lookup_field = "pk"
+
+
+class CompanyValueViewSet(GatedReadOnlyViewSet):
+    model = CompanyValue
+    serializer_class = s.CompanyValueSerializer
+    pagination_class = None
+    lookup_field = "pk"
+
+
+class ValuePointViewSet(GatedReadOnlyViewSet):
+    model = ValuePoint
+    serializer_class = s.ValuePointSerializer
     pagination_class = None
     lookup_field = "pk"

@@ -7,7 +7,7 @@ import { Section } from '@/components/ui/Section';
 import { Tag } from '@/components/ui/Tag';
 import { getDictionary } from '@/i18n/dictionaries';
 import { getJob, getSettings } from '@/lib/cms';
-import { resolveLocale } from '@/lib/page';
+import { heading, resolveLocale } from '@/lib/page';
 import { buildMetadata, JsonLd, jobPostingJsonLd } from '@/lib/seo';
 
 type Props = PageProps<'/[locale]/careers/[slug]'>;
@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: Props) {
   const locale = await resolveLocale(params);
   const job = await getJob(locale, (await params).slug);
   if (!job) return {};
-  return buildMetadata({ locale, path: `/careers/${job.slug}`, title: job.title, description: job.summary, seo: job.seo });
+  return buildMetadata({ locale, path: `/careers/${job.slug}/`, title: job.title, description: job.summary, seo: job.seo });
 }
 
 export default async function JobPage({ params }: Props) {
@@ -33,11 +33,11 @@ export default async function JobPage({ params }: Props) {
       <PageHeader
         locale={locale}
         trail={[
-          { name: t.sections.careers, path: '/careers' },
-          { name: job.title, path: `/careers/${job.slug}` },
+          { name: t.sections.careers, path: '/careers/' },
+          { name: job.title, path: `/careers/${job.slug}/` },
         ]}
         eyebrow={t.sections.careers}
-        title={job.title}
+        title={heading({ title: job.title, seo: job.seo })}
         intro={job.summary}
         gate={job}
       >

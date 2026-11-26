@@ -127,9 +127,25 @@ export function VideoHero({ hero }: { hero: Hero }) {
       <div className="container-wide pt-32 pb-20 md:pb-28">
         <div className="max-w-4xl">
           {hero.eyebrow && <Eyebrow className="mb-6 text-blue-200">{hero.eyebrow}</Eyebrow>}
-          <h1 id="hero-title" className="text-display font-semibold text-balance">
-            <LineReveal text={hero.headline} delay={0.2} />
-          </h1>
+          {/*
+           * The page heading search engines read is the small line; the large
+           * display headline is styling, so it is a paragraph. Without an H1
+           * set, the headline itself is the heading.
+           */}
+          {hero.h1 ? (
+            <>
+              <h1 id="hero-title" className="mb-4 text-lead font-semibold text-balance text-white/90">
+                {hero.h1}
+              </h1>
+              <p className="max-w-3xl text-h1 font-semibold text-balance">
+                <LineReveal text={hero.headline} delay={0.2} />
+              </p>
+            </>
+          ) : (
+            <h1 id="hero-title" className="text-display font-semibold text-balance">
+              <LineReveal text={hero.headline} delay={0.2} />
+            </h1>
+          )}
           {hero.subline && <p className="mt-6 max-w-2xl text-lead text-white/85">{hero.subline}</p>}
           <div className="mt-10 flex flex-wrap gap-3">
             {hero.primary.label && (

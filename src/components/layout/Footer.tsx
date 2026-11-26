@@ -30,6 +30,8 @@ export function Footer({
 }) {
   const t = getDictionary(locale);
   const year = new Date().getFullYear();
+  // Contact details arrive empty until Site settings marks them verified.
+  const hasContact = offices.length > 0 || Boolean(settings.phone || settings.email || settings.businessHours) || settings.socials.length > 0;
 
   return (
     <footer data-surface="navy" className="relative isolate overflow-hidden bg-navy text-ink-inverse">
@@ -58,6 +60,7 @@ export function Footer({
           ))}
         </nav>
 
+        {hasContact && (
         <div className="md:col-span-4">
           <h2 className="eyebrow mb-5 text-blue-200">{t.sections.contact}</h2>
           <ul className="flex flex-col gap-4 text-ink-inverse-muted">
@@ -88,6 +91,7 @@ export function Footer({
                 </a>
               </li>
             )}
+            {settings.businessHours && <li>{settings.businessHours}</li>}
           </ul>
           {settings.socials.length > 0 && (
             <ul className="mt-6 flex flex-wrap gap-2">
@@ -107,6 +111,7 @@ export function Footer({
             </ul>
           )}
         </div>
+        )}
       </div>
 
       <div className="border-t border-hairline-inverse">

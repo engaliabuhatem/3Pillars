@@ -6,7 +6,7 @@ test.beforeEach(async ({ page }) => quietVisit(page));
 test.use({ reducedMotion: 'reduce' });
 
 for (const locale of LOCALES) {
-  for (const path of [...TEMPLATES, '/_styleguide', '/nope']) {
+  for (const path of [...TEMPLATES, '/_styleguide/', '/nope/']) {
     test(`axe: /${locale}${path} has no serious or critical issues`, async ({ page }) => {
       await page.goto(`/${locale}${path}`);
       const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();

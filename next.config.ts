@@ -40,6 +40,8 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // Every page address ends in a slash (the content document's URLs); Next 308s the other form.
+  trailingSlash: true,
   poweredByHeader: false,
   experimental: { globalNotFound: true },
   images: {

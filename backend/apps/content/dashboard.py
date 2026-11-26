@@ -14,7 +14,8 @@ from django.db.models import Q
 from adminkit.dashboard import TONES, Attention, Dashboard, Recent, Tile, changelist_url
 from apps.bd.models import Enquiry, ProposalRequest, Stage
 from apps.careers.models import Application, Job
-from apps.core.models import ApprovalStatus
+from apps.core.models import ApprovalStatus, LaunchReadinessItem, Page
+from apps.core.seo import MISSING_SEO
 
 from .models import KPI, Client, Insight, Pillar, Project, Sector, Service, TeamMember, Testimonial
 
@@ -48,22 +49,37 @@ def overdue(model, label):
 
 MISSING_ALT = Q(image_alt="") | Q(image_alt_ar="")
 
+
+def missing_seo(model, label):
+    return FilterAttention(model, label, count=lambda qs: qs.filter(MISSING_SEO), query="seo=missing")
+
+
 dashboard_callback = Dashboard(
     attention=[
-        Attention(ProposalRequest, "New proposal requests", where={"stage": Stage.NEW}),
+        Attention(LaunchReadinessItem, "Launch readiness items still open",
+                  where={"status": LaunchReadinessItem.Status.OPEN}),
+        Attention(ProposalRequest, "New consultation requests", where={"stage": Stage.NEW}),
         Attention(Enquiry, "Unhandled enquiries", where={"is_handled": False}),
-        overdue(ProposalRequest, "Proposals past follow-up"),
+        overdue(ProposalRequest, "Consultation requests past follow-up"),
         overdue(Enquiry, "Enquiries past follow-up"),
         Attention(Application, "Unhandled applications", where={"is_handled": False}),
         Attention(Project, "Projects without a hero image", where={"image": ""}),
         FilterAttention(Project, "Project images missing a description",
                         count=lambda qs: qs.exclude(image="").filter(MISSING_ALT), query="media=missing_alt"),
+        Attention(Project, "Projects blocked on attribution", where={"attribution_approved": False}),
+        FilterAttention(Insight, "Planned article topics without a body",
+                        count=lambda qs: qs.filter(is_draft_topic=True, body=""), query="writing=unwritten"),
+        missing_seo(Page, "Pages missing SEO fields"),
+        missing_seo(Service, "Services missing SEO fields"),
+        missing_seo(Sector, "Sectors missing SEO fields"),
         *[
             Attention(model, f"{str(model._meta.verbose_name_plural).capitalize()} awaiting approval", where=PENDING)
-            for model in (Service, Sector, Project, Pillar, KPI, Insight, Client, Testimonial, TeamMember)
+            for model in (Page, Service, Sector, Project, Pillar, KPI, Insight, Client, Testimonial, TeamMember)
         ],
     ],
     tiles=[
+        Tile(LaunchReadinessItem, "Readiness · Confirmed", where={"status": LaunchReadinessItem.Status.CONFIRMED}),
+        Tile(LaunchReadinessItem, "Readiness · Open", where={"status": LaunchReadinessItem.Status.OPEN}),
         Tile(ProposalRequest, "Pipeline · New", where={"stage": Stage.NEW}),
         Tile(ProposalRequest, "Pipeline · Qualified", where={"stage": Stage.QUALIFIED}),
         Tile(ProposalRequest, "Pipeline · Proposal sent", where={"stage": Stage.PROPOSAL_SENT}),
@@ -76,7 +92,7 @@ dashboard_callback = Dashboard(
     recent=Recent(
         ProposalRequest,
         order_by="-submitted_at",
-        title="Latest proposal requests",
+        title="Latest consultation requests",
         label_field="__str__",
         meta_field="organisation",
         date_field="submitted_at",

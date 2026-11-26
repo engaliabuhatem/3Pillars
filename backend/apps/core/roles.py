@@ -8,7 +8,8 @@ than one (an Editor who is also an Approver).
 from django.contrib.auth.models import Group, Permission
 
 CONTENT_APPS = ("content",)
-SITE_MODELS = ("homesection", "page", "pageblock", "pageblockitem", "navitem", "footercolumn", "redirect")
+SITE_MODELS = ("homesection", "page", "pageblock", "pageblockitem", "navitem", "footercolumn", "redirect",
+               "launchreadiness", "launchreadinessitem")
 BD_APP = "bd"
 
 

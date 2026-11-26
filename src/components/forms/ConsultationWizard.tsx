@@ -2,17 +2,17 @@
 
 import { CircleCheck } from 'lucide-react';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { Button, ButtonLink } from '@/components/ui/Button';
+import { Button } from '@/components/ui/Button';
 import { Alert } from '@/components/ui/Feedback';
 import { Stepper } from '@/components/ui/Stepper';
 import { useDictionary, useLocale } from '@/i18n/LocaleProvider';
 import { track } from '@/lib/analytics';
 import type { Ref } from '@/lib/cms/types';
-import { isEmail, submitForm, trackingFields, type FieldErrors } from '@/lib/forms';
+import { AREAS_OF_INTEREST, isEmail, submitForm, trackingFields, type FieldErrors } from '@/lib/forms';
 import { Checkbox, ChoiceGroup, FileField, Honeypot, Select, TextArea, TextField } from './Field';
 import { Turnstile } from './Turnstile';
 
-const STORAGE_KEY = '3p-proposal-draft';
+const STORAGE_KEY = '3p-consultation-draft';
 const MAX_FILE_MB = 10;
 const MAX_FILES = 5;
 const ACCEPT = '.pdf,.docx,.xlsx,.png,.jpg,.jpeg,.zip';
@@ -25,6 +25,7 @@ const EMPTY = {
   organisationType: '',
   role: '',
   country: '',
+  areaOfInterest: '',
   projectType: '',
   sector: '',
   services: [] as string[],
@@ -39,7 +40,7 @@ type Values = typeof EMPTY;
 /** Which fields each step owns, so "Continue" validates only what is on screen. */
 const STEP_FIELDS: Array<Array<keyof Values | 'consent'>> = [
   ['name', 'email', 'organisation'],
-  ['projectType', 'location', 'projectStage', 'timeline'],
+  ['areaOfInterest', 'projectType', 'location', 'projectStage', 'timeline'],
   ['scope'],
   ['consent'],
 ];
@@ -53,7 +54,22 @@ function loadDraft(): Values {
   }
 }
 
-export function ProposalWizard({ sectors, services, turnstileKey }: { sectors: Ref[]; services: Ref[]; turnstileKey?: string }) {
+/**
+ * Request a Consultation: four steps (you, the project, scope, review) with
+ * the answers kept in the browser until sent. Each step change and the area
+ * of interest are reported to analytics.
+ */
+export function ConsultationWizard({
+  sectors,
+  services,
+  turnstileKey,
+  consentText,
+}: {
+  sectors: Ref[];
+  services: Ref[];
+  turnstileKey?: string;
+  consentText?: string;
+}) {
   const locale = useLocale();
   const t = useDictionary();
   const p = t.proposal;
@@ -114,7 +130,7 @@ export function ProposalWizard({ sectors, services, turnstileKey }: { sectors: R
   const goTo = (next: number) => {
     setStep(next);
     setErrors({});
-    track('form_step', { form: 'proposal', step: next + 1 });
+    track('form_step', { form: 'consultation', step: next + 1 });
     requestAnimationFrame(() => heading.current?.focus());
   };
 
@@ -142,9 +158,9 @@ export function ProposalWizard({ sectors, services, turnstileKey }: { sectors: R
     if (token) body.append('turnstileToken', token);
     files.forEach((file) => body.append('attachments', file));
 
-    const result = await submitForm('proposal-requests/', body);
+    const result = await submitForm('consultation-requests/', body);
     if (result.ok) {
-      track('form_submit', { form: 'proposal' });
+      track('form_submit', { form: 'consultation', area: values.areaOfInterest });
       try {
         sessionStorage.removeItem(STORAGE_KEY);
       } catch {
@@ -166,17 +182,6 @@ export function ProposalWizard({ sectors, services, turnstileKey }: { sectors: R
         <CircleCheck aria-hidden className="size-12 text-green" />
         <h2 className="mt-6 text-h2 font-semibold">{p.successTitle}</h2>
         <p className="mt-4 text-lead text-ink-muted">{p.successBody}</p>
-        <ol className="mt-8 grid gap-4">
-          {p.next.map((line, i) => (
-            <li key={line} className="flex gap-4">
-              <span className="grid size-8 shrink-0 place-items-center rounded-pill bg-blue-50 font-semibold text-blue">{i + 1}</span>
-              <span className="pt-1">{line}</span>
-            </li>
-          ))}
-        </ol>
-        <ButtonLink href="/projects" locale={locale} variant="secondary" arrow className="mt-10">
-          {t.common.allProjects}
-        </ButtonLink>
       </div>
     );
   }
@@ -209,6 +214,18 @@ export function ProposalWizard({ sectors, services, turnstileKey }: { sectors: R
 
       {step === 1 && (
         <div className="grid gap-8">
+          <ChoiceGroup
+            legend={f.area}
+            name="areaOfInterest"
+            required
+            value={values.areaOfInterest}
+            error={errors.areaOfInterest}
+            onChange={(v) => {
+              set('areaOfInterest', v as string);
+              track('area_of_interest', { form: 'consultation', area: v as string });
+            }}
+            options={AREAS_OF_INTEREST.map((value) => ({ value, label: f.areas[value] ?? value }))}
+          />
           <div className="grid gap-6 sm:grid-cols-2">
             <TextField label={p.projectType} hint={p.projectTypeHint} required {...text('projectType')} />
             <TextField label={p.location} required {...text('location')} />
@@ -248,7 +265,7 @@ export function ProposalWizard({ sectors, services, turnstileKey }: { sectors: R
       {step === 3 && (
         <div className="grid gap-8">
           <Review values={values} files={files} sectors={sectors} services={services} onEdit={goTo} />
-          <Checkbox label={f.consent} checked={consent} onChange={(e) => setConsent(e.target.checked)} error={errors.consent} />
+          <Checkbox label={consentText || f.consent} required checked={consent} onChange={(e) => setConsent(e.target.checked)} error={errors.consent} />
           {turnstileKey && <Turnstile siteKey={turnstileKey} onToken={setToken} />}
         </div>
       )}
@@ -293,6 +310,7 @@ function Review({
     {
       step: 1,
       rows: [
+        [f.area, f.areas[values.areaOfInterest] ?? ''],
         [p.projectType, values.projectType],
         [p.location, values.location],
         [p.sector, values.sector ? nameOf(sectors, values.sector) : ''],

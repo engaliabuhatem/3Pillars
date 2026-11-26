@@ -4,6 +4,7 @@ import { fallbackHome, fallbackNavigation, fallbackSettings } from '@/content/fa
 import type { Locale } from '@/i18n/config';
 import { cmsGet, cmsGetOr } from './client';
 import type {
+  ApproachStep,
   Certification,
   Download,
   Home,
@@ -11,7 +12,6 @@ import type {
   InsightList,
   Job,
   JobCard,
-  LifecycleStage,
   Navigation,
   Office,
   Page,
@@ -58,8 +58,8 @@ export const getSector = cache((locale: Locale, slug: string) =>
 export interface ProjectFilters {
   sector?: string;
   service?: string;
-  country?: string;
-  status?: string;
+  role?: string;
+  type?: string;
   page?: string;
 }
 
@@ -68,7 +68,7 @@ const EMPTY_PROJECTS: ProjectList = {
   next: null,
   previous: null,
   results: [],
-  facets: { countries: [], sectors: [], services: [] },
+  facets: { sectors: [], services: [], roles: [], types: [] },
 };
 
 export const getProjects = (locale: Locale, filters: ProjectFilters = {}) =>
@@ -77,11 +77,17 @@ export const getProject = cache((locale: Locale, slug: string) =>
   cmsGet<Project>(`projects/${slug}/`, { tags: ['projects'], locale }),
 );
 
-export const getInsights = (locale: Locale, params: { category?: string; page?: string } = {}) =>
+export interface InsightFilters {
+  category?: string;
+  kind?: string;
+  page?: string;
+}
+
+export const getInsights = (locale: Locale, params: InsightFilters = {}) =>
   cmsGetOr<InsightList>(
     'insights/',
-    { tags: ['insights'], locale, params: { category__slug: params.category, page: params.page } },
-    { count: 0, next: null, previous: null, results: [], categories: [] },
+    { tags: ['insights'], locale, params: { category__slug: params.category, kind: params.kind, page: params.page } },
+    { count: 0, next: null, previous: null, results: [], categories: [], kinds: [] },
   );
 export const getInsight = cache((locale: Locale, slug: string) =>
   cmsGet<Insight>(`insights/${slug}/`, { tags: ['insights'], locale }),
@@ -92,8 +98,8 @@ export const getPage = cache((locale: Locale, slug: string) =>
 );
 
 export const getPillars = (locale: Locale) => cmsGetOr<Pillar[]>('pillars/', { tags: ['pillars'], locale }, []);
-export const getApproachStages = (locale: Locale) =>
-  cmsGetOr<LifecycleStage[]>('approach-stages/', { tags: ['approach'], locale }, []);
+export const getApproachSteps = (locale: Locale) =>
+  cmsGetOr<ApproachStep[]>('approach-steps/', { tags: ['approach'], locale }, []);
 
 export const getTeam = (locale: Locale) => cmsGetOr<TeamMember[]>('team/', { tags: ['team'], locale }, []);
 export const getOffices = (locale: Locale) => cmsGetOr<Office[]>('offices/', { tags: ['offices'], locale }, []);
