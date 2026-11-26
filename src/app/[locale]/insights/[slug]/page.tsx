@@ -41,6 +41,7 @@ export default async function InsightPage({ params }: Props) {
   return (
     <>
       <PageHeader
+        background={insight.heroImage}
         locale={locale}
         trail={[
           { name: index.title, path: '/insights/' },

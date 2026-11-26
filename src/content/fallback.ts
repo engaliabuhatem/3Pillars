@@ -43,6 +43,7 @@ export function fallbackSettings(locale: Locale): SiteSettings {
     homeSeo: { title: '', description: '', h1: '', image: null, indexable: NOT_INDEXABLE },
     preferWww: false,
     defaultOgImage: null,
+    defaultHeroImage: null,
     analytics: null,
     cookieNotice: '',
     consentText: '',

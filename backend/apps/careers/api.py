@@ -19,6 +19,7 @@ class JobCardSerializer(LocalizedSerializer):
 
 
 class JobSerializer(SeoMixin, JobCardSerializer):
+    image_fields = ("hero_image",)
     class Meta(JobCardSerializer.Meta):
         fields = [*JobCardSerializer.Meta.fields, "description", "seo", "updated_at"]
 

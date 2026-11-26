@@ -41,7 +41,7 @@ export default async function ProjectsPage({ params, searchParams }: Props) {
 
   return (
     <>
-      <PageHeader locale={locale} trail={[{ name: page.title, path: PATH }]} eyebrow={page.eyebrow} title={heading(page)} intro={page.intro} gate={page} />
+      <PageHeader background={page.heroImage} locale={locale} trail={[{ name: page.title, path: PATH }]} eyebrow={page.eyebrow} title={heading(page)} intro={page.intro} gate={page} />
       <Section tight>
         <div className="container-wide">
           {(projects.count > 0 || filtered) && (

@@ -30,28 +30,95 @@ export function Footer({
 }) {
   const t = getDictionary(locale);
   const year = new Date().getFullYear();
+  // The CMS footer columns, then every published service and sector page.
+  const columns = [
+    ...navigation.footer.map((column) => ({
+      title: column.title,
+      links: column.items.map((item) => ({ label: item.label, href: item.link })),
+    })),
+    { title: t.sections.services, links: navigation.mega.services.map((s) => ({ label: s.name, href: `/services/${s.slug}/` })) },
+    { title: t.sections.sectors, links: navigation.mega.sectors.map((s) => ({ label: s.name, href: `/sectors/${s.slug}/` })) },
+  ].filter((column) => column.links.length > 0);
   // Contact details arrive empty until Site settings marks them verified.
   const hasContact = offices.length > 0 || Boolean(settings.phone || settings.email || settings.businessHours) || settings.socials.length > 0;
 
   return (
     <footer data-surface="navy" className="relative isolate overflow-hidden bg-navy text-ink-inverse">
-      <ThreeArcs className="pointer-events-none absolute inset-0 -z-10 size-full opacity-60" />
-      <div className="container-wide grid gap-14 py-20 md:grid-cols-12 md:py-24">
-        <div className="md:col-span-4">
-          <Logo variant="full" tone="white" className="h-36 w-auto" />
-          {settings.tagline && <p className="mt-6 max-w-xs text-ink-inverse-muted">{settings.tagline}</p>}
-          {settings.groupRelationship && <p className="mt-3 max-w-xs text-caption text-grey-300">{settings.groupRelationship}</p>}
+      {/* The arcs sit in the far corner, clear of the text. */}
+      <ThreeArcs className="pointer-events-none absolute -end-10 -bottom-10 -z-10 h-80 w-[36rem] opacity-40 rtl:-scale-x-100" />
+      <div className="container-wide grid gap-14 py-16 md:py-20 lg:grid-cols-12 lg:gap-10">
+        <div className="lg:col-span-4">
+          <Logo variant="full" tone="white" className="h-28 w-auto" />
+          {settings.tagline && <p className="mt-6 max-w-sm text-[0.9375rem] leading-relaxed text-ink-inverse-muted">{settings.tagline}</p>}
+          {settings.groupRelationship && <p className="mt-3 max-w-sm text-caption text-grey-300">{settings.groupRelationship}</p>}
+
+          {hasContact && (
+            <div className="mt-8">
+              <h2 className="sr-only">{t.sections.contact}</h2>
+              <ul className="flex flex-col gap-2 text-[0.9375rem] text-ink-inverse-muted">
+                {offices.map((office) => (
+                  <li key={office.id} className="flex gap-3">
+                    <MapPin aria-hidden className="mt-1 size-4 shrink-0 text-green-200" />
+                    <span>
+                      <span className="block font-semibold text-white">
+                        {office.city}, {office.country}
+                      </span>
+                      {office.address}
+                    </span>
+                  </li>
+                ))}
+                {settings.phone && (
+                  <li>
+                    <a href={`tel:${settings.phone.replace(/s/g, '')}`} className="inline-flex min-h-11 items-center gap-3 hover:text-white" dir="ltr">
+                      <Phone aria-hidden className="size-4 text-green-200" />
+                      {settings.phone}
+                    </a>
+                  </li>
+                )}
+                {settings.email && (
+                  <li>
+                    <a href={`mailto:${settings.email}`} className="inline-flex min-h-11 items-center gap-3 hover:text-white">
+                      <Mail aria-hidden className="size-4 text-green-200" />
+                      {settings.email}
+                    </a>
+                  </li>
+                )}
+                {settings.businessHours && <li>{settings.businessHours}</li>}
+              </ul>
+              {settings.socials.length > 0 && (
+                <ul className="mt-4 flex flex-wrap gap-2">
+                  {settings.socials.map((social) => (
+                    <li key={social.network}>
+                      <a
+                        href={social.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex min-h-11 items-center rounded-pill px-4 ring-1 ring-hairline-inverse ring-inset hover:bg-white/10"
+                      >
+                        {SOCIAL_LABEL[social.network]}
+                        <span className="sr-only"> ({t.a11y.external})</span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
         </div>
 
-        <nav aria-label={t.a11y.footerNav} className="grid gap-10 sm:grid-cols-2 md:col-span-4">
-          {navigation.footer.map((column) => (
+        <nav aria-label={t.a11y.footerNav} className="grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-4 lg:col-span-8">
+          {columns.map((column) => (
             <div key={column.title}>
-              <h2 className="eyebrow mb-5 text-blue-200">{column.title}</h2>
-              <ul className="flex flex-col gap-1">
-                {column.items.map((item) => (
-                  <li key={item.link}>
-                    <SmartLink href={item.link} locale={locale} className="inline-flex min-h-11 items-center hover:text-blue-200">
-                      {item.label}
+              <h2 className="eyebrow mb-4 text-blue-200">{column.title}</h2>
+              <ul className="flex flex-col">
+                {column.links.map((link) => (
+                  <li key={link.href}>
+                    <SmartLink
+                      href={link.href}
+                      locale={locale}
+                      className="inline-flex min-h-11 items-center py-1 text-[0.9375rem] leading-snug text-white/90 hover:text-blue-200"
+                    >
+                      {link.label}
                     </SmartLink>
                   </li>
                 ))}
@@ -59,59 +126,6 @@ export function Footer({
             </div>
           ))}
         </nav>
-
-        {hasContact && (
-        <div className="md:col-span-4">
-          <h2 className="eyebrow mb-5 text-blue-200">{t.sections.contact}</h2>
-          <ul className="flex flex-col gap-4 text-ink-inverse-muted">
-            {offices.map((office) => (
-              <li key={office.id} className="flex gap-3">
-                <MapPin aria-hidden className="mt-1 size-4 shrink-0 text-green-200" />
-                <span>
-                  <span className="block font-semibold text-white">
-                    {office.city}, {office.country}
-                  </span>
-                  {office.address}
-                </span>
-              </li>
-            ))}
-            {settings.phone && (
-              <li>
-                <a href={`tel:${settings.phone.replace(/\s/g, '')}`} className="inline-flex min-h-11 items-center gap-3 hover:text-white" dir="ltr">
-                  <Phone aria-hidden className="size-4 text-green-200" />
-                  {settings.phone}
-                </a>
-              </li>
-            )}
-            {settings.email && (
-              <li>
-                <a href={`mailto:${settings.email}`} className="inline-flex min-h-11 items-center gap-3 hover:text-white">
-                  <Mail aria-hidden className="size-4 text-green-200" />
-                  {settings.email}
-                </a>
-              </li>
-            )}
-            {settings.businessHours && <li>{settings.businessHours}</li>}
-          </ul>
-          {settings.socials.length > 0 && (
-            <ul className="mt-6 flex flex-wrap gap-2">
-              {settings.socials.map((social) => (
-                <li key={social.network}>
-                  <a
-                    href={social.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex min-h-11 items-center rounded-pill px-4 ring-1 ring-hairline-inverse ring-inset hover:bg-white/10"
-                  >
-                    {SOCIAL_LABEL[social.network]}
-                    <span className="sr-only"> ({t.a11y.external})</span>
-                  </a>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-        )}
       </div>
 
       <div className="border-t border-hairline-inverse">

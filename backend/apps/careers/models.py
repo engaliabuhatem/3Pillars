@@ -3,10 +3,10 @@ from django.utils import timezone
 
 from apps.core.fields import RichTextField
 from apps.core.files import RandomName, document_validators, private_storage
-from apps.core.models import Publishable, Seo, Slugged
+from apps.core.models import HeroBackground, Publishable, Seo, Slugged
 
 
-class Job(Publishable, Slugged, Seo):
+class Job(Publishable, Slugged, Seo, HeroBackground):
     cache_tags = ("jobs",)
     public_path = "/careers/{slug}/"
 

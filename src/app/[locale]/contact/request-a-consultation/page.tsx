@@ -25,6 +25,7 @@ export default async function RequestConsultationPage({ params }: Props) {
   return (
     <>
       <PageHeader
+        background={page.heroImage}
         locale={locale}
         trail={[
           { name: contact.title, path: '/contact/' },

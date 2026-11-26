@@ -282,3 +282,24 @@ class SeedContentTests(TestCase):
         self.assertEqual([item["label"] for item in header], ["Home"])
         paths = {entry["path"] for entry in api.get("/api/sitemap/").json()}
         self.assertTrue(paths <= {"/privacy/", "/terms/", "/cookies/", "/capability-statement/"}, paths)
+
+
+class HeroBackgroundTests(TestCase):
+    """Every page type can carry a hero background, with a site-wide default behind the rest."""
+
+    def test_hero_images_reach_the_api(self):
+        gate(True)
+        Service.objects.create(name="PMO", hero_image="heroes/pmo.jpg")
+        Page.objects.create(title="About Us", slug="about-us", hero_image="heroes/about.jpg")
+        settings = SiteSettings.load()
+        settings.default_hero_image = "heroes/default.jpg"
+        settings.save()
+        api = APIClient()
+        with mock.patch("apps.core.images.image_dimensions", return_value=(1600, 900)):
+            service = api.get("/api/services/pmo/").json()["heroImage"]
+            page = api.get("/api/pages/about-us/").json()["heroImage"]
+            default = api.get("/api/site-settings/").json()["defaultHeroImage"]
+        self.assertTrue(service["src"].endswith("heroes/pmo.jpg"))
+        self.assertTrue(page["src"].endswith("heroes/about.jpg"))
+        self.assertEqual(service["alt"], "")
+        self.assertTrue(default["src"].endswith("heroes/default.jpg"))

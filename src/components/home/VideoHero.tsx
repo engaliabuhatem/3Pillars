@@ -86,6 +86,7 @@ export function VideoHero({ hero }: { hero: Hero }) {
 
   return (
     <section
+      data-hero-dark
       ref={section}
       data-surface="navy"
       aria-labelledby="hero-title"

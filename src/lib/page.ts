@@ -34,6 +34,7 @@ export async function pageCopy(locale: Locale, slug: string, fallbackTitle: stri
       intro: '',
       ctaLabel: '',
       image: null,
+      heroImage: null,
       blocks: [],
       seo: EMPTY_SEO,
       updatedAt: '',

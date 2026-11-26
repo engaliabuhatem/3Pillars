@@ -21,7 +21,7 @@ export default async function AboutPage({ params }: PageProps<'/[locale]/about-u
 
   return (
     <>
-      <PageHeader locale={locale} trail={[{ name: page.title, path: PATH }]} eyebrow={page.eyebrow} title={heading(page)} intro={page.intro} image={page.image} gate={page} />
+      <PageHeader background={page.heroImage} locale={locale} trail={[{ name: page.title, path: PATH }]} eyebrow={page.eyebrow} title={heading(page)} intro={page.intro} image={page.image} gate={page} />
       <Blocks blocks={page.blocks} locale={locale} />
 
       {certifications.length > 0 && (

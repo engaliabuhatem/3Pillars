@@ -40,6 +40,7 @@ export default async function ServicePage({ params }: Props) {
   return (
     <>
       <PageHeader
+        background={service.heroImage}
         locale={locale}
         trail={[
           { name: index.title, path: '/services/' },

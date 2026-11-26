@@ -25,9 +25,9 @@ export default async function CareersPage({ params }: Props) {
 
   return (
     <>
-      <PageHeader locale={locale} trail={[{ name: page.title, path: PATH }]} eyebrow={page.eyebrow} title={heading(page)} intro={page.intro} image={page.image} gate={page}>
+      <PageHeader background={page.heroImage} locale={locale} trail={[{ name: page.title, path: PATH }]} eyebrow={page.eyebrow} title={heading(page)} intro={page.intro} image={page.image} gate={page}>
         {page.ctaLabel && (
-          <ButtonLink href="#open-roles" locale={locale} arrow track="careers_view_opportunities">
+          <ButtonLink href="#open-roles" locale={locale} variant="inverse" arrow track="careers_view_opportunities">
             {page.ctaLabel}
           </ButtonLink>
         )}

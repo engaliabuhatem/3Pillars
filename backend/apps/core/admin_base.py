@@ -54,6 +54,13 @@ class MissingSeoFilter(admin.SimpleListFilter):
         return queryset
 
 
+def hero_tab() -> tuple:
+    """The photograph behind the page title. Admins using it list "hero_image" in `preview_fields`."""
+    return tab("Hero background", "hero_image_preview", "hero_image",
+               description="Shown darkened behind the page title. Without one, the default from Site settings → "
+                           "Hero video is used.")
+
+
 def media_tab(field: str = "image", title: str = "Media", description: str = "") -> tuple:
     return tab(title, f"{field}_preview", field, (f"{field}_alt", f"{field}_alt_ar"), description=description)
 

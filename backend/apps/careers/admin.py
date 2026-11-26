@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from apps.core.admin_base import BaseAdmin, PrivateFileAdminMixin, PublishableAdmin, publishing_tab, seo_tab, tab
+from apps.core.admin_base import BaseAdmin, PrivateFileAdminMixin, PublishableAdmin, hero_tab, publishing_tab, seo_tab, tab
 
 from .models import Application, Job
 
@@ -12,10 +12,12 @@ class JobAdmin(PublishableAdmin):
     list_editable = ["is_open"]
     search_fields = ["title", "title_ar", "location"]
     prepopulated_fields = {"slug": ("title",)}
+    preview_fields = ("hero_image",)
     fieldsets = [
         tab("Content", ("title", "title_ar"), ("slug", "employment_type"), ("location", "location_ar"),
             ("summary", "summary_ar"), ("description", "description_ar")),
         tab("Dates", "is_open", ("posted_at", "closes_at")),
+        hero_tab(),
         seo_tab(),
         publishing_tab(),
     ]

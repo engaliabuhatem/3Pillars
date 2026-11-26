@@ -65,6 +65,6 @@ systemctl restart 3pillars-frontend
 
 step "Smoke test"
 sleep 3
-curl -fsS -o /dev/null -w "website  %{http_code}\n" "http://127.0.0.1:$FRONTEND_PORT/en"
+curl -fsS -o /dev/null -w "website  %{http_code}\n" "http://127.0.0.1:$FRONTEND_PORT/en/"
 curl -fsS -o /dev/null -w "api      %{http_code}\n" "$API/health/"
 echo "Deployed."

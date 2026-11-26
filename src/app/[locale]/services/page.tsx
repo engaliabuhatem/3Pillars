@@ -32,7 +32,7 @@ export default async function ServicesPage({ params }: PageProps<'/[locale]/serv
 
   return (
     <>
-      <PageHeader locale={locale} trail={[{ name: page.title, path: PATH }]} eyebrow={page.eyebrow} title={heading(page)} intro={page.intro} gate={page} />
+      <PageHeader background={page.heroImage} locale={locale} trail={[{ name: page.title, path: PATH }]} eyebrow={page.eyebrow} title={heading(page)} intro={page.intro} gate={page} />
 
       {lines.length > 0 && (
         <Section tone="surface" tight>

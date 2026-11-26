@@ -14,7 +14,7 @@ from django.utils import timezone
 from apps.core.fields import RichTextField
 from apps.core.files import RandomName, document_validators, private_storage
 from apps.core.images import LOGO_VALIDATORS, PHOTO_HELP, photo_validators
-from apps.core.models import Orderable, Publishable, PublishableQuerySet, Seo, Slugged, require_alt
+from apps.core.models import HeroBackground, Orderable, Publishable, PublishableQuerySet, Seo, Slugged, require_alt
 
 
 class PillarColor(models.TextChoices):
@@ -72,7 +72,7 @@ class Pillar(Publishable):
 # ── Sectors ──────────────────────────────────────────────────────────────
 
 
-class Sector(Publishable, Slugged, Seo):
+class Sector(Publishable, Slugged, Seo, HeroBackground):
     cache_tags = ("sectors", "home", "navigation")
     public_path = "/sectors/{slug}/"
 
@@ -147,7 +147,7 @@ class SectorFAQ(Orderable):
 # ── Services ─────────────────────────────────────────────────────────────
 
 
-class Service(Publishable, Slugged, Seo):
+class Service(Publishable, Slugged, Seo, HeroBackground):
     cache_tags = ("services", "home", "navigation")
     public_path = "/services/{slug}/"
 
@@ -291,7 +291,7 @@ class Client(Publishable):
 # ── Projects ─────────────────────────────────────────────────────────────
 
 
-class Project(Publishable, Slugged, Seo):
+class Project(Publishable, Slugged, Seo, HeroBackground):
     """
     A selected project or case study, with exact role attribution.
 
@@ -653,7 +653,7 @@ class InsightQuerySet(PublishableQuerySet):
         return self.written() if include_pending else self.approved()
 
 
-class Insight(Publishable, Slugged, Seo):
+class Insight(Publishable, Slugged, Seo, HeroBackground):
     cache_tags = ("insights", "home", "sectors")
     public_path = "/insights/{slug}/"
 

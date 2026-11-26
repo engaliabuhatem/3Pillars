@@ -38,6 +38,7 @@ export default async function SectorPage({ params }: Props) {
   return (
     <>
       <PageHeader
+        background={sector.heroImage}
         locale={locale}
         trail={[
           { name: index.title, path: '/sectors/' },

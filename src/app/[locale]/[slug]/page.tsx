@@ -30,7 +30,7 @@ export default async function CmsPage({ params }: Props) {
 
   return (
     <>
-      <PageHeader locale={locale} trail={[{ name: page.title, path: page.path }]} eyebrow={page.eyebrow} title={heading(page)} intro={page.intro} image={page.image} gate={page} />
+      <PageHeader background={page.heroImage} locale={locale} trail={[{ name: page.title, path: page.path }]} eyebrow={page.eyebrow} title={heading(page)} intro={page.intro} image={page.image} gate={page} />
       <Blocks blocks={page.blocks} locale={locale} />
     </>
   );

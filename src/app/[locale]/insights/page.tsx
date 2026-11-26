@@ -44,7 +44,7 @@ export default async function InsightsPage({ params, searchParams }: Props) {
 
   return (
     <>
-      <PageHeader locale={locale} trail={[{ name: page.title, path: PATH }]} eyebrow={page.eyebrow} title={heading(page)} intro={page.intro} gate={page} />
+      <PageHeader background={page.heroImage} locale={locale} trail={[{ name: page.title, path: PATH }]} eyebrow={page.eyebrow} title={heading(page)} intro={page.intro} gate={page} />
       <Section tight>
         <div className="container-wide">
           <nav aria-label={t.filters.type} className="mb-4">

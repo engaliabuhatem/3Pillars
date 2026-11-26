@@ -78,6 +78,8 @@ export interface SiteSettings {
   homeSeo: Seo;
   preferWww: boolean;
   defaultOgImage: Media | null;
+  /** Behind the title of any page without a hero background of its own. */
+  defaultHeroImage: Media | null;
   analytics: { provider: 'plausible' | 'ga4'; id: string } | null;
   cookieNotice: string;
   consentText: string;
@@ -189,6 +191,7 @@ export interface Faq {
 }
 
 export interface Service extends ServiceCard {
+  heroImage: Media | null;
   intro: string;
   capabilitiesTitle: string;
   capabilities: Array<{ title: string; description: string }>;
@@ -218,6 +221,7 @@ export interface SectorCard extends Gated {
 }
 
 export interface Sector extends SectorCard {
+  heroImage: Media | null;
   intro: string;
   listTitle: string;
   listItems: Array<{ text: string }>;
@@ -253,6 +257,7 @@ export interface ProjectCard extends Gated {
 }
 
 export interface Project extends ProjectCard {
+  heroImage: Media | null;
   ourRoleDetail: string;
   challenge: string;
   scopeOfServices: string;
@@ -308,6 +313,7 @@ export interface InsightCard extends Gated {
 }
 
 export interface Insight extends InsightCard {
+  heroImage: Media | null;
   body: string;
   ourRoleStatement: string;
   seo: Seo;
@@ -372,6 +378,7 @@ export interface JobCard extends Gated {
 }
 
 export interface Job extends JobCard {
+  heroImage: Media | null;
   description: string;
   seo: Seo;
   updatedAt: string;
@@ -414,6 +421,7 @@ export interface Page extends Gated {
   intro: string;
   ctaLabel: string;
   image: Media | null;
+  heroImage: Media | null;
   blocks: PageBlock[];
   seo: Seo;
   updatedAt: string;

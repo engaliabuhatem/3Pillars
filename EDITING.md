@@ -46,6 +46,7 @@ seconds. You never need a developer or a "redeploy".
 | Certifications and memberships | **Certifications** |
 | The capability statement PDF | **Downloads** → tick *Capability statement*. Tick *Ask for contact details first* to collect leads |
 | Job openings | **Jobs** — untick *Accepting applications* to close one |
+| The photograph behind a page's title (hero background) | The **Hero background** tab on any page, service, sector, project, insight or job. Pages without one use Site settings → **Hero video** → *Default page hero background*; with neither, the hero is navy with the brand arcs |
 | The menu at the top and the links in the footer | Configuration → **Navigation** (header items) and **Footer columns** |
 | A page's address (slug) | The *Slug* field. The old address keeps working automatically (see **Redirects**) |
 | Search engine title, description and page heading (H1), share image | The **SEO** tab on any page, service, sector, project or article (home: Site settings → **Home SEO**). Keywords there are guidance only |

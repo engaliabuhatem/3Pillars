@@ -173,6 +173,22 @@ class Seo(models.Model):
         abstract = True
 
 
+HERO_HELP = (
+    "The photograph behind the page title, at least 1600 × 900. It is decorative (darkened behind the white "
+    "title), so it needs no description. Leave blank to use the default in Site settings."
+)
+
+
+class HeroBackground(models.Model):
+    """The background image of a page's opening (hero) band."""
+
+    hero_image = models.ImageField("Hero background", upload_to="heroes/", blank=True,
+                                   validators=photo_validators(1600, 900), help_text=HERO_HELP)
+
+    class Meta:
+        abstract = True
+
+
 def require_alt(instance, *fields: str) -> None:
     """
     Every uploaded image needs English and Arabic alt text (accessibility), and
@@ -253,6 +269,10 @@ class SiteSettings(TimeStamped):
     hero_poster_mobile = models.ImageField(
         "Poster image (mobile)", upload_to="hero/", blank=True, validators=photo_validators(720, 1280),
         help_text="Optional. A portrait still of the mobile video, at least 720 × 1280. Phones use the desktop poster when this is empty.",
+    )
+    default_hero_image = models.ImageField(
+        "Default page hero background", upload_to="heroes/", blank=True, validators=photo_validators(1600, 900),
+        help_text="Behind the title of every page that has no hero background of its own. Decorative, at least 1600 × 900.",
     )
     hero_poster_alt = models.CharField("Poster description", max_length=200, blank=True)
     hero_poster_alt_ar = models.CharField("Poster description (Arabic)", max_length=200, blank=True)
@@ -529,7 +549,7 @@ class HomeSection(Orderable):
 # ── Pages ────────────────────────────────────────────────────────────────
 
 
-class Page(Publishable, Slugged, Seo):
+class Page(Publishable, Slugged, Seo, HeroBackground):
     """About, Approach, Careers intro, legal pages — built from ordered blocks."""
 
     cache_tags = ("pages", "navigation")

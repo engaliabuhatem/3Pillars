@@ -31,6 +31,7 @@ export default async function LeadershipPage({ params }: Props) {
   return (
     <>
       <PageHeader
+        background={page.heroImage}
         locale={locale}
         trail={[
           { name: about.title, path: '/about-us/' },

@@ -12,6 +12,7 @@ from apps.core.admin_base import (
     PrivateFileAdminMixin,
     PublishableAdmin,
     badge,
+    hero_tab,
     media_tab,
     publishing_tab,
     render_thumbnail,
@@ -174,7 +175,7 @@ class ServiceAdmin(ThumbnailListMixin, PublishableAdmin):
     prepopulated_fields = {"slug": ("name",)}
     filter_horizontal = ["related_sectors"]
     autocomplete_fields = ["pillar"]
-    preview_fields = ("image",)
+    preview_fields = ("image", "hero_image")
     inlines = [ServiceCapabilityInline, ServiceBulletInline, ServiceStepInline, ServiceFAQInline]
     fieldsets = [
         tab("Content EN", "name", ("slug", "icon"), "summary", "intro", "who_we_support", "context_title",
@@ -186,6 +187,7 @@ class ServiceAdmin(ThumbnailListMixin, PublishableAdmin):
             description="Headings for the lists. The items themselves are in the “List ·” tabs. Empty lists are hidden."),
         tab("Related", "pillar", "related_sectors",
             description="Each linked sector also links back to this service."),
+        hero_tab(),
         media_tab(),
         seo_tab(),
         publishing_tab("positioning_note"),
@@ -245,7 +247,7 @@ class SectorAdmin(ThumbnailListMixin, PublishableAdmin):
     list_filter = [ThinFilter, MissingSeoFilter]
     search_fields = ["name", "name_ar", "focus_summary"]
     prepopulated_fields = {"slug": ("name",)}
-    preview_fields = ("image",)
+    preview_fields = ("image", "hero_image")
     inlines = [SectorListItemInline, SectorFAQInline]
     fieldsets = [
         tab("Content EN", "name", ("slug", "icon"), "focus_summary", "intro", "our_focus"),
@@ -253,6 +255,7 @@ class SectorAdmin(ThumbnailListMixin, PublishableAdmin):
         tab("Lists", ("list_title", "list_title_ar"), ("scope_caveat", "scope_caveat_ar"),
             description="The heading for the list. The items are in the “List ·” tabs."),
         tab("Related", "related_services"),
+        hero_tab(),
         media_tab(),
         seo_tab(),
         publishing_tab("positioning_note"),
@@ -322,7 +325,7 @@ class ProjectAdmin(PrivateFileAdminMixin, ThumbnailListMixin, PublishableAdmin):
     prepopulated_fields = {"slug": ("title",)}
     autocomplete_fields = ["client", "sector"]
     filter_horizontal = ["services"]
-    preview_fields = ("image",)
+    preview_fields = ("image", "hero_image")
     readonly_fields = ["evidence_link"]
     inlines = [ProjectMetricInline, ProjectImageInline]
     fieldsets = [
@@ -339,6 +342,7 @@ class ProjectAdmin(PrivateFileAdminMixin, ThumbnailListMixin, PublishableAdmin):
             ("value", "currency", "show_value"), ("start_date", "end_date"),
             description="The client is named only when “Client agreed to be named” is ticked. "
                         "The value stays private unless “Show the value publicly” is ticked."),
+        hero_tab(),
         media_tab(),
         seo_tab(),
         publishing_tab("featured"),
@@ -436,7 +440,7 @@ class InsightAdmin(ThumbnailListMixin, PublishableAdmin):
     search_fields = ["title", "title_ar", "excerpt"]
     prepopulated_fields = {"slug": ("title",)}
     filter_horizontal = ["sectors"]
-    preview_fields = ("image",)
+    preview_fields = ("image", "hero_image")
     ordering_field = None
     fieldsets = [
         tab("Content", ("title", "title_ar"), ("slug", "kind"), ("category", "is_draft_topic"),
@@ -444,6 +448,7 @@ class InsightAdmin(ThumbnailListMixin, PublishableAdmin):
             ("author", "author_ar"), "published_at", "sectors",
             description="Nothing without a body is ever shown, even on staging. News also needs a date, a summary "
                         "and a factual statement of 3 Pillars’ role."),
+        hero_tab(),
         media_tab(),
         seo_tab(),
         publishing_tab(),

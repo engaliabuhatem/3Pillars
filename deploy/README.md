@@ -1,5 +1,7 @@
 # Deploying 3 Pillars
 
+**Launching 3pillars-go.com:** follow [docs/go-live-3pillars-go.md](../docs/go-live-3pillars-go.md).
+
 One Ubuntu 24.04 VPS: nginx in front, gunicorn (Django, port 8011) and `next start`
 (port 3011) behind it, both under systemd. Ports, Unix user (`pillars`) and paths
 (`/srv/3pillars`, `/var/lib/3pillars`) are separate from HS Investment's, so both
@@ -19,8 +21,9 @@ admin.example.com             → nginx → Django  127.0.0.1:8011   (/admin, /a
 2. **Clone** — `sudo git clone <repo> /srv/3pillars`
 3. **Run** — `sudo DOMAIN=example.com EMAIL=ops@example.com bash /srv/3pillars/deploy/setup-server.sh`
    It installs packages, creates the `pillars` user, generates both env files (secret
-   key, shared webhook secret, preview token), migrates, seeds the placeholder
-   structure, configures nginx + HTTPS + firewall, and builds the site.
+   key, shared webhook secret, preview token), migrates, loads the content
+   (`seed_content`, all awaiting approval), configures nginx + HTTPS, and builds the
+   site. Other sites on the server (HS Investment) and the firewall state are left alone.
 4. **Admin user** — `sudo -u pillars /srv/3pillars/backend/.venv/bin/python /srv/3pillars/backend/manage.py createsuperuser`
 5. **Mail** — fill `EMAIL_*` in `/srv/3pillars/backend/.env`, then `systemctl restart 3pillars-backend`.
 

@@ -57,11 +57,14 @@ test('page addresses end in a slash', async ({ page }) => {
   expect(canonical).toMatch(/\/en\/services\/$/);
 });
 
-test('unreviewed or pending pages are kept out of search', async ({ page }) => {
-  for (const path of ['/en/services/', '/ar/services/']) {
-    await page.goto(path);
-    await expect(page.locator('meta[name="robots"]'), path).toHaveAttribute('content', /noindex/);
-    await expect(page.locator('link[rel="alternate"][hreflang="ar"]'), path).toHaveCount(0);
+test('robots and hreflang follow approval and Arabic review', async ({ page, request }) => {
+  const api = process.env.NEXT_PUBLIC_CMS_API_URL ?? 'http://127.0.0.1:8000/api';
+  const { seo } = (await (await request.get(`${api}/pages/services/`)).json()) as { seo: { indexable: { en: boolean; ar: boolean } } };
+  for (const locale of ['en', 'ar'] as const) {
+    await page.goto(`/${locale}/services/`);
+    const robots = page.locator('meta[name="robots"]');
+    await expect(robots, locale).toHaveAttribute('content', seo.indexable[locale] ? /(^|, )index/ : /noindex/);
+    await expect(page.locator('link[rel="alternate"][hreflang="ar"]'), locale).toHaveCount(seo.indexable.ar ? 1 : 0);
   }
 });
 

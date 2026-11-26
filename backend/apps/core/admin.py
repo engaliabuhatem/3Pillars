@@ -18,6 +18,7 @@ from .admin_base import (
     BaseTabularInline,
     PublishableAdmin,
     media_tab,
+    hero_tab,
     publishing_tab,
     seo_tab,
     tab,
@@ -61,7 +62,7 @@ class TOTPDeviceAdmin(OTPTOTPDeviceAdmin, ModelAdmin):
 
 @admin.register(SiteSettings)
 class SiteSettingsAdmin(BaseAdmin):
-    preview_fields = ("hero_poster", "hero_poster_mobile")
+    preview_fields = ("hero_poster", "hero_poster_mobile", "default_hero_image")
     readonly_fields = ["hero_video_status", "consent_version"]
 
     class Media:
@@ -81,7 +82,7 @@ class SiteSettingsAdmin(BaseAdmin):
                         "the display headline; it is the one search engines read."),
         tab("Hero video", "hero_video_status", "hero_video", "hero_video_webm", "hero_video_mobile",
             "hero_poster_preview", "hero_poster", ("hero_poster_alt", "hero_poster_alt_ar"),
-            "hero_poster_mobile_preview", "hero_poster_mobile",
+            "hero_poster_mobile_preview", "hero_poster_mobile", "default_hero_image_preview", "default_hero_image",
             description="Desktop and mobile each get their own video and poster; phones fall back to the "
                         "desktop ones when theirs are empty. Without a video the poster is shown with a slow zoom."),
         tab("Contact", "contact_verified", "phone", "email", ("whatsapp", "show_whatsapp"), ("address", "address_ar"),
@@ -234,11 +235,12 @@ class PageAdmin(PublishableAdmin):
     list_filter = [MissingSeoFilter]
     search_fields = ["title", "title_ar", "intro"]
     prepopulated_fields = {"slug": ("title",)}
-    preview_fields = ("image",)
+    preview_fields = ("image", "hero_image")
     inlines = [PageBlockInline]
     fieldsets = [
         tab("Content", ("title", "title_ar"), ("slug", "path"), ("eyebrow", "eyebrow_ar"), ("intro", "intro_ar"),
             ("cta_label", "cta_label_ar"), "note"),
+        hero_tab(),
         media_tab(),
         seo_tab(),
         publishing_tab(),

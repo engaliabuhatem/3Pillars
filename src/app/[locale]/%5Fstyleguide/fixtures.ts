@@ -70,6 +70,7 @@ function build(locale: Locale) {
     gallery: [],
     facts: { value: null, start: '2026-01-15', end: null, durationMonths: null },
     related: [],
+    heroImage: null,
     seo: NO_SEO,
     updatedAt: '2026-01-15',
   };

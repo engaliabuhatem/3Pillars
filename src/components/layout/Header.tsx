@@ -22,14 +22,11 @@ export function Header({
   navigation,
   shortName,
   cta,
-  homeStartsDark,
 }: {
   navigation: Navigation;
   shortName: string;
   /** The call-to-action button (Request a Consultation). */
   cta: { label: string; href: string };
-  /** The home page opens on the navy video hero, so the bar starts in its inverse look there. */
-  homeStartsDark: boolean;
 }) {
   const locale = useLocale();
   const t = useDictionary();
@@ -65,7 +62,12 @@ export function Header({
     document.documentElement.style.overflow = mobileOpen ? 'hidden' : '';
   }, [mobileOpen]);
 
-  const overDark = homeStartsDark && isActivePath(pathname, `/${locale}`);
+  // Pages open on a navy hero (marked data-hero-dark), so the bar starts in its inverse look;
+  // pages without one (404, coming soon) switch it back once they render.
+  const [overDark, setOverDark] = useState(true);
+  useEffect(() => {
+    queueMicrotask(() => setOverDark(Boolean(document.querySelector('main [data-hero-dark]'))));
+  }, [pathname]);
   const dark = overDark && !scrolled && !mobileOpen;
   const isCurrent = (item: NavItem) => isActivePath(pathname, localize(item.link, locale));
 

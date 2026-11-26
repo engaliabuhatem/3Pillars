@@ -24,7 +24,7 @@ export default async function CapabilityStatementPage({ params }: Props) {
 
   return (
     <>
-      <PageHeader locale={locale} trail={[{ name: page.title, path: '/capability-statement/' }]} eyebrow={page.eyebrow} title={heading(page)} intro={page.intro} gate={page} />
+      <PageHeader background={page.heroImage} locale={locale} trail={[{ name: page.title, path: '/capability-statement/' }]} eyebrow={page.eyebrow} title={heading(page)} intro={page.intro} gate={page} />
       <Section tone="surface" tight>
         <div className="container-wide">
           {doc ? (

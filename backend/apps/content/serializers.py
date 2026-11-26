@@ -170,6 +170,7 @@ class SectorCardSerializer(LocalizedSerializer):
 
 
 class ServiceSerializer(SeoMixin, ServiceCardSerializer):
+    image_fields = ("image", "hero_image")
     capabilities = ServiceCapabilitySerializer(many=True, read_only=True)
     bullets = ServiceBulletSerializer(many=True, read_only=True)
     steps = ServiceStepSerializer(many=True, read_only=True)
@@ -205,6 +206,7 @@ class SectorFAQSerializer(LocalizedSerializer):
 
 
 class SectorSerializer(SeoMixin, SectorCardSerializer):
+    image_fields = ("image", "hero_image")
     list_items = SectorListItemSerializer(many=True, read_only=True)
     faqs = SectorFAQSerializer(many=True, read_only=True)
     related_services = serializers.SerializerMethodField()
@@ -280,6 +282,7 @@ class ProjectCardSerializer(LocalizedSerializer):
 
 
 class ProjectSerializer(SeoMixin, ProjectCardSerializer):
+    image_fields = ("image", "hero_image")
     services = serializers.SerializerMethodField()
     metrics = ProjectMetricSerializer(many=True, read_only=True)
     gallery = ProjectImageSerializer(many=True, read_only=True)
@@ -370,6 +373,7 @@ class InsightCardSerializer(LocalizedSerializer):
 
 
 class InsightSerializer(SeoMixin, InsightCardSerializer):
+    image_fields = ("image", "hero_image")
     class Meta(InsightCardSerializer.Meta):
         fields = [*InsightCardSerializer.Meta.fields, "body", "our_role_statement", "seo", "updated_at"]
 

@@ -51,6 +51,7 @@ export default async function ProjectPage({ params }: Props) {
   return (
     <>
       <PageHeader
+        background={project.heroImage}
         locale={locale}
         trail={[
           { name: index.title, path: '/projects/' },

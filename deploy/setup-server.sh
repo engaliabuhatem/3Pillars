@@ -12,7 +12,7 @@
 set -euo pipefail
 
 : "${DOMAIN:?Set DOMAIN, e.g. DOMAIN=example.com}"
-: "${EMAIL:?Set EMAIL for Let's Encrypt expiry notices}"
+: "${EMAIL:?Set EMAIL for certificate expiry notices}"
 
 APP=/srv/3pillars
 DATA=/var/lib/3pillars
@@ -26,7 +26,6 @@ step() { printf '\n\033[1;33m==> %s\033[0m\n' "$*"; }
 # ── 1. Packages ──────────────────────────────────────────────────────────
 step "System packages"
 apt-get update
-DEBIAN_FRONTEND=noninteractive apt-get -y upgrade
 DEBIAN_FRONTEND=noninteractive apt-get install -y \
   nginx certbot python3-certbot-nginx python3-venv python3-pip git ufw curl sqlite3
 
@@ -101,15 +100,20 @@ if [ ! -f /etc/nginx/sites-available/3pillars ]; then
   sed "s/__DOMAIN__/$DOMAIN/g" "$HERE/nginx/3pillars.conf" > /etc/nginx/sites-available/3pillars
 fi
 ln -sf /etc/nginx/sites-available/3pillars /etc/nginx/sites-enabled/3pillars
-rm -f /etc/nginx/sites-enabled/default
+# Other sites on this server (HS Investment) are left exactly as they are.
 nginx -t
 systemctl reload nginx
 
 # ── 7. Firewall ──────────────────────────────────────────────────────────
-step "Firewall (SSH + HTTP/HTTPS only)"
-ufw allow OpenSSH
-ufw allow 'Nginx Full'
-ufw --force enable
+step "Firewall"
+# On a shared server, never switch the firewall on from here: rules the other
+# sites need may be missing. Only make sure this site's rules are present.
+if ufw status | grep -q "Status: active"; then
+  ufw allow OpenSSH
+  ufw allow 'Nginx Full'
+else
+  echo "   ufw is inactive; left as it is (turn it on deliberately for the whole server)."
+fi
 
 # ── 8. HTTPS ─────────────────────────────────────────────────────────────
 step "Let's Encrypt certificates"

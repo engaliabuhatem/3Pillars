@@ -34,7 +34,7 @@ export default async function OurApproachPage({ params }: PageProps<'/[locale]/o
 
   return (
     <>
-      <PageHeader locale={locale} trail={[{ name: page.title, path: PATH }]} eyebrow={page.eyebrow} title={heading(page)} intro={page.intro} gate={page} />
+      <PageHeader background={page.heroImage} locale={locale} trail={[{ name: page.title, path: PATH }]} eyebrow={page.eyebrow} title={heading(page)} intro={page.intro} gate={page} />
 
       {pillars.length > 0 && (
         <Section tone="surface" tight>

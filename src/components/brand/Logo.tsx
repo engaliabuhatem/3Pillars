@@ -43,6 +43,8 @@ export function Logo({
       viewBox={VIEWBOX[variant]}
       {...(title ? { role: 'img', 'aria-label': title } : { 'aria-hidden': true })}
       className={[TONE_CLASS[tone], className].filter(Boolean).join(' ')}
+      // The wordmark is Latin: on Arabic pages RTL would anchor its text at the wrong end and clip it.
+      direction="ltr"
       data-logo
     >
       <g fill="none" strokeLinecap="round" strokeLinejoin="round">

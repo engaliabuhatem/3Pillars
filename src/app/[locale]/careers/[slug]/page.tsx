@@ -31,6 +31,7 @@ export default async function JobPage({ params }: Props) {
   return (
     <>
       <PageHeader
+        background={job.heroImage}
         locale={locale}
         trail={[
           { name: t.sections.careers, path: '/careers/' },

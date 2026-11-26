@@ -87,7 +87,7 @@ class SeoMixin(serializers.Serializer):
 
 
 class SiteSettingsSerializer(LocalizedSerializer):
-    image_fields = ("hero_poster", "hero_poster_mobile", "og_image")
+    image_fields = ("hero_poster", "hero_poster_mobile", "og_image", "default_hero_image")
     hero = serializers.SerializerMethodField()
     logos = serializers.SerializerMethodField()
     socials = serializers.SerializerMethodField()
@@ -268,7 +268,7 @@ class PageBlockSerializer(LocalizedSerializer):
 
 
 class PageSerializer(SeoMixin, LocalizedSerializer):
-    image_fields = ("image",)
+    image_fields = ("image", "hero_image")
     blocks = serializers.SerializerMethodField()
 
     path = serializers.CharField(source="get_public_path")

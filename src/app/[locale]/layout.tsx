@@ -14,7 +14,7 @@ import { ToastProvider } from '@/components/ui/Toast';
 import { LOCALES, dirFor, isLocale } from '@/i18n/config';
 import { getDictionary } from '@/i18n/dictionaries';
 import { LocaleProvider } from '@/i18n/LocaleProvider';
-import { getHome, getNavigation, getOffices, getSettings } from '@/lib/cms';
+import { getNavigation, getOffices, getSettings } from '@/lib/cms';
 import { CONSULTATION_PATH } from '@/components/content/CtaBand';
 import type { NavItem } from '@/lib/cms/types';
 import { buildMetadata, JsonLd, organizationJsonLd, websiteJsonLd } from '@/lib/seo';
@@ -46,14 +46,12 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
 
-  const [settings, navigation, offices, home] = await Promise.all([
+  const [settings, navigation, offices] = await Promise.all([
     getSettings(locale),
     getNavigation(locale),
     getOffices(locale),
-    getHome(locale),
   ]);
   const t = getDictionary(locale);
-  const homeStartsDark = home.sections[0]?.kind === 'hero';
   const ctaItem = findCta(navigation.header);
   const cta = { label: ctaItem?.label || t.common.requestConsultation, href: ctaItem?.link || CONSULTATION_PATH };
 
@@ -71,7 +69,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
             >
               {t.a11y.skip}
             </a>
-            <Header navigation={navigation} shortName={settings.shortName} cta={cta} homeStartsDark={homeStartsDark} />
+            <Header navigation={navigation} shortName={settings.shortName} cta={cta} />
             <main id="main" tabIndex={-1} className="outline-none">
               {children}
             </main>
